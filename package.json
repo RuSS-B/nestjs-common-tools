@@ -1,5 +1,5 @@
 {
-  "name": "@russ-b/nestjs-tools",
+  "name": "@russ-b/nestjs-common-tools",
   "version": "1.0.0",
   "description": "NestJS and TypeORM utility tools",
   "main": "dist/index.js",
@@ -24,7 +24,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/RuSS-B/nestjs-tools.git"
+    "url": "git+https://github.com/RuSS-B/nestjs-common-tools.git"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",
