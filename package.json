@@ -1,0 +1,43 @@
+{
+  "name": "@russ-b/nestjs-tools",
+  "version": "1.0.0",
+  "description": "NestJS and TypeORM utility tools",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npx tsc",
+    "test": "jest",
+    "prepare": "npm run build",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "keywords": [
+    "nestjs",
+    "typeorm",
+    "repository",
+    "database"
+  ],
+  "author": "RuSS-B",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RuSS-B/nestjs-tools.git"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "typescript": "^5.7.3",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.2",
+    "typescript-eslint": "^8.20.0",
+    "tsconfig-paths": "^4.2.0"
+  }
+}
