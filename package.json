@@ -34,7 +34,8 @@
   },
   "typesVersions": {
     "*": {
-      "grpc/transformers": ["dist/common/grpc/transformers/index.d.ts"]
+      "grpc/transformers": ["dist/common/grpc/transformers/index.d.ts"],
+      "validators": ["dist/common/validators/index.d.ts"]
     }
   },
   "peerDependencies": {
