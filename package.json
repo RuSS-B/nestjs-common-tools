@@ -1,6 +1,6 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.1.15",
+  "version": "1.1.18",
   "description": "NestJS and TypeORM utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,29 +30,23 @@
   "exports": {
     ".": "./dist/index.js",
     "./grpc": "./dist/grpc/index.js",
-    "./grpc/transformers": "./dist/grpc/transformers/index.js",
-    "./grpc/filters": "./dist/grpc/filters/index.js",
-    "./grpc/interceptors": "./dist/grpc/interceptors/index.js",
+    "./grpc/*": "./dist/grpc/*/index.js",
     "./validators": "./dist/validators/index.js"
   },
   "typesVersions": {
     "*": {
-      "grpc": ["dist/grpc/index.d.ts"],
-      "grpc/transformers": [
-        "dist/grpc/transformers/index.d.ts"
+      "grpc": [
+        "dist/grpc/index.d.ts"
       ],
-      "grpc/filters": [
-        "dist/grpc/filters/index.d.ts"
-      ],
-      "grpc/interceptors": [
-        "dist/grpc/interceptors/index.d.ts"
-      ],
+      "grpc/*": ["dist/grpc/*/index.d.ts"],
       "validators": [
         "dist/validators/index.d.ts"
       ]
     }
   },
   "peerDependencies": {
+    "@grpc/reflection": "^1.0.4",
+    "@nestjs/config": "^4.0.0",
     "@grpc/grpc-js": "^1.12.5",
     "@nestjs/common": "^11.0.0",
     "@nestjs/microservices": "^11.0.7",
