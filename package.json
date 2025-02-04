@@ -1,6 +1,6 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "NestJS and TypeORM utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,8 @@
     "test": "jest",
     "prepare": "npm run build",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\"",
+    "publish": "npm publish --access public"
   },
   "keywords": [
     "nestjs",
@@ -33,7 +34,7 @@
   },
   "typesVersions": {
     "*": {
-      "grpc/transformers": ["dist/grpc/transformers/index.d.ts"]
+      "grpc/transformers": ["dist/common/grpc/transformers/index.d.ts"]
     }
   },
   "peerDependencies": {
