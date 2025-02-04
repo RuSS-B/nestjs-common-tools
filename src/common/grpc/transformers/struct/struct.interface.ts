@@ -28,5 +28,4 @@ export type StructType =
   | number
   | boolean
   | object
-  | 0
   | [];

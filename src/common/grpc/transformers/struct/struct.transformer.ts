@@ -1,7 +1,7 @@
 import type { IStruct, IValue, StructType } from './struct.interface';
 
 export class StructTransformer {
-  static fromObjectToStruct(obj: object): IStruct {
+  static toStruct(obj: object): IStruct {
     const fields: { key: string; value: IValue }[] = [];
     Object.entries(obj).forEach(([key, value]) => {
       fields.push({
@@ -42,14 +42,14 @@ export class StructTransformer {
 
     if (typeof value === 'object') {
       return {
-        structValue: StructTransformer.fromObjectToStruct(value),
+        structValue: StructTransformer.toStruct(value),
       };
     }
 
     return value;
   }
 
-  static fromStructToObject(value?: IStruct): object | undefined {
+  static toObject(value?: IStruct): object | undefined {
     if (value === undefined || value === null) {
       return value;
     }
@@ -64,13 +64,13 @@ export class StructTransformer {
     }
 
     if (Array.isArray(value)) {
-      return value.map((item) => StructTransformer.fromStructToObject(item));
+      return value.map((item) => StructTransformer.toObject(item));
     }
 
     if (typeof value === 'object') {
       const result: Record<string, any> = {};
       for (const [key, field] of Object.entries(value)) {
-        result[key] = StructTransformer.fromStructToObject(field);
+        result[key] = StructTransformer.toObject(field);
       }
 
       return result;
@@ -97,7 +97,7 @@ export class StructTransformer {
     }
 
     if (field?.structValue !== undefined) {
-      return StructTransformer.fromStructToObject(field.structValue);
+      return StructTransformer.toObject(field.structValue);
     }
 
     if (field?.nullValue !== undefined) {
