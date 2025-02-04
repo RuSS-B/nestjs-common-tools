@@ -45,10 +45,15 @@ message NestedArrayMessage {
     repeated SubMessage nested_array = 2;
 }
 
+message SimpleMessageArrayResponse {
+    repeated SimpleMessage data = 1;
+}
+
 service TestService {
     rpc SimpleNested (SimpleNestedRequest) returns (SimpleNestedResponse);
     rpc ProcessNested (NestedMessage) returns (NestedMessage);
     rpc ProcessDeepNested (DeepNestedMessage) returns (DeepNestedMessage);
     rpc ProcessSimple (SimpleMessage) returns (SimpleMessage);
+    rpc ProcessSimpleArray (SimpleMessage) returns (SimpleMessageArrayResponse);
     rpc ProcessNestedArray (NestedArrayMessage) returns (NestedArrayMessage);
 }

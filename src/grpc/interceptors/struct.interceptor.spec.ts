@@ -1,7 +1,7 @@
 import { ExecutionContext, CallHandler } from '@nestjs/common';
 import { of } from 'rxjs';
 import { StructInterceptor } from './struct.interceptor';
-import { GrpcPackageDefinitionService } from '../services/grpc-package-definition.service';
+import { GrpcPackageDefinitionService } from '../services';
 import { Test } from '@nestjs/testing';
 import { join } from 'path';
 import { loadSync, PackageDefinition } from '@grpc/proto-loader';
@@ -12,7 +12,7 @@ describe('StructInterceptor', () => {
   let packageDefinition: PackageDefinition;
   const packageName = 'package_one';
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const protoDir = join(__dirname, '../../../test/protos/');
     const protoPath = [
       join(protoDir, 'package_one/struct_one.proto'),
@@ -26,9 +26,7 @@ describe('StructInterceptor', () => {
       oneofs: true,
       includeDirs: [protoDir],
     });
-  });
 
-  beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
       providers: [StructInterceptor, GrpcPackageDefinitionService],
     }).compile();
@@ -123,6 +121,72 @@ describe('StructInterceptor', () => {
     interceptor.intercept(executionContext, next).subscribe({
       next: (result) => {
         expect(result).toEqual(expectedTransformedResponse);
+        done();
+      },
+      error: (error) => {
+        done(error);
+      },
+    });
+  });
+
+  it('should not transform fields when no Structs are present', (done) => {
+    const normalData = {
+      name: 'test name',
+      value: 42,
+    };
+
+    const executionContext = {
+      switchToRpc: () => ({
+        getData: () => normalData,
+      }),
+      getHandler: () => ({}),
+      getArgs: () => [normalData],
+    } as unknown as ExecutionContext;
+
+    jest
+      .spyOn(Reflect, 'getMetadata')
+      .mockReturnValue([{ service: 'TestService', rpc: 'ProcessSimple' }]);
+
+    const next: CallHandler = {
+      handle: () => of(normalData),
+    };
+
+    interceptor.intercept(executionContext, next).subscribe({
+      next: (result) => {
+        expect(result).toEqual(normalData);
+        done();
+      },
+      error: (error) => {
+        done(error);
+      },
+    });
+  });
+
+  it('should not transform when an array in response', (done) => {
+    const normalData = {
+      name: 'test name',
+      value: 42,
+    };
+
+    const executionContext = {
+      switchToRpc: () => ({
+        getData: () => normalData,
+      }),
+      getHandler: () => ({}),
+      getArgs: () => [normalData],
+    } as unknown as ExecutionContext;
+
+    jest
+      .spyOn(Reflect, 'getMetadata')
+      .mockReturnValue([{ service: 'TestService', rpc: 'ProcessSimpleArray' }]);
+
+    const next: CallHandler = {
+      handle: () => of({ data: [normalData, normalData, normalData] }),
+    };
+
+    interceptor.intercept(executionContext, next).subscribe({
+      next: (result) => {
+        expect(result).toEqual({ data: [normalData, normalData, normalData] });
         done();
       },
       error: (error) => {

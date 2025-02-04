@@ -21,7 +21,7 @@ describe('GrpcPackageDefinitionService', () => {
       enums: String,
       defaults: true,
       oneofs: true,
-      includeDirs: [protoDir]
+      includeDirs: [protoDir],
     });
   });
 
@@ -100,6 +100,20 @@ describe('GrpcPackageDefinitionService', () => {
       expect(fieldNames).toContain('metadata');
     });
 
+    it('should not count array fields if there are no structs', () => {
+      const fields = service.getResponseFields(
+        serviceName,
+        'ProcessSimpleArray',
+      );
+
+      const structFields = service.findFieldsByType(
+        fields,
+        'google.protobuf.Struct',
+      );
+
+      expect(structFields).toHaveLength(0);
+    });
+
     it('should find fields by type', () => {
       const requestFields = service.getRequestFields(
         serviceName,
@@ -110,10 +124,10 @@ describe('GrpcPackageDefinitionService', () => {
         'google.protobuf.Struct',
       );
       expect(structFields).toEqual([
-        {name: 'metadata'},
-        {name: 'items'},
-        {name: 'nested', fields: [{name: 'config'}] },
-        {name: 'external_nested', fields : [{name: 'config'}] }
+        { name: 'metadata' },
+        { name: 'items' },
+        { name: 'nested', fields: [{ name: 'config' }] },
+        { name: 'external_nested', fields: [{ name: 'config' }] },
       ]);
     });
 
