@@ -48,7 +48,9 @@ export class StructInterceptor implements NestInterceptor {
           GOOGLE_PROTOBUF_STRUCT,
         );
 
-        fields.forEach((f) => (data[f.name] = StructTransformer.toStruct(data[f.name])));
+        fields.forEach(
+          (f) => (data[f.name] = StructTransformer.toStruct(data[f.name])),
+        );
 
         return data;
       }),
@@ -56,7 +58,12 @@ export class StructInterceptor implements NestInterceptor {
   }
 
   private traverseAndTransform(obj: any, fields: IFoundField[]) {
-    fields.forEach((f) => (obj[f.name] = f.fields?.length ? this.traverseAndTransform(obj[f.name], f.fields) : StructTransformer.toObject(obj[f.name])));
+    fields.forEach(
+      (f) =>
+        (obj[f.name] = f.fields?.length
+          ? this.traverseAndTransform(obj[f.name], f.fields)
+          : StructTransformer.toObject(obj[f.name])),
+    );
 
     return obj;
   }

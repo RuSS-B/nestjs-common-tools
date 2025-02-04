@@ -24,22 +24,24 @@ describe('StructInterceptor', () => {
       enums: String,
       defaults: true,
       oneofs: true,
-      includeDirs: [protoDir]
+      includeDirs: [protoDir],
     });
   });
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
-      providers: [
-        StructInterceptor,
-        GrpcPackageDefinitionService,
-      ],
+      providers: [StructInterceptor, GrpcPackageDefinitionService],
     }).compile();
 
     interceptor = moduleRef.get<StructInterceptor>(StructInterceptor);
-    packageDefinitionService = moduleRef.get<GrpcPackageDefinitionService>(GrpcPackageDefinitionService);
+    packageDefinitionService = moduleRef.get<GrpcPackageDefinitionService>(
+      GrpcPackageDefinitionService,
+    );
 
-    packageDefinitionService.setPackageDefinition(packageDefinition, packageName);
+    packageDefinitionService.setPackageDefinition(
+      packageDefinition,
+      packageName,
+    );
   });
 
   it('should transform Struct fields in request and response', (done) => {
@@ -48,17 +50,17 @@ describe('StructInterceptor', () => {
       settings: {
         fields: {
           theme: { stringValue: 'dark' },
-          fontSize: { numberValue: 14 }
-        }
-      }
+          fontSize: { numberValue: 14 },
+        },
+      },
     };
 
     const expectedTransformedRequest = {
       title: 'test',
       settings: {
         theme: 'dark',
-        fontSize: 14
-      }
+        fontSize: 14,
+      },
     };
 
     const args = [requestData];
@@ -70,9 +72,9 @@ describe('StructInterceptor', () => {
       getArgs: () => args,
     } as unknown as ExecutionContext;
 
-    jest.spyOn(Reflect, 'getMetadata').mockReturnValue([
-      { service: 'TestService', rpc: 'SimpleNested' }
-    ]);
+    jest
+      .spyOn(Reflect, 'getMetadata')
+      .mockReturnValue([{ service: 'TestService', rpc: 'SimpleNested' }]);
 
     const next: CallHandler = {
       handle: () => of({}),
@@ -88,8 +90,8 @@ describe('StructInterceptor', () => {
       title: 'test',
       settings: {
         theme: 'dark',
-        fontSize: 14
-      }
+        fontSize: 14,
+      },
     };
 
     const expectedTransformedResponse = {
@@ -97,9 +99,9 @@ describe('StructInterceptor', () => {
       settings: {
         fields: {
           theme: { stringValue: 'dark' },
-          fontSize: { numberValue: 14 }
-        }
-      }
+          fontSize: { numberValue: 14 },
+        },
+      },
     };
 
     const executionContext = {
@@ -110,9 +112,9 @@ describe('StructInterceptor', () => {
       getArgs: () => [{}],
     } as unknown as ExecutionContext;
 
-    jest.spyOn(Reflect, 'getMetadata').mockReturnValue([
-      { service: 'TestService', rpc: 'SimpleNested' }
-    ]);
+    jest
+      .spyOn(Reflect, 'getMetadata')
+      .mockReturnValue([{ service: 'TestService', rpc: 'SimpleNested' }]);
 
     const next: CallHandler = {
       handle: () => of(responseData),
@@ -125,7 +127,7 @@ describe('StructInterceptor', () => {
       },
       error: (error) => {
         done(error);
-      }
+      },
     });
   });
 });
