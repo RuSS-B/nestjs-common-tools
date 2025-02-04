@@ -1,6 +1,6 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.1.11",
+  "version": "1.1.13",
   "description": "NestJS and TypeORM utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,24 +29,24 @@
   },
   "exports": {
     ".": "./dist/index.js",
-    "./grpc/transformers": "./dist/common/grpc/transformers/index.js",
-    "./grpc/filters": "./dist/common/grpc/filters/index.js",
-    "./grpc/interceptors": "./dist/common/grpc/interceptors/index.js",
-    "./validators": "./dist/common/validators/index.js"
+    "./grpc/transformers": "./dist/grpc/transformers/index.js",
+    "./grpc/filters": "./dist/grpc/filters/index.js",
+    "./grpc/interceptors": "./dist/grpc/interceptors/index.js",
+    "./validators": "./dist/validators/index.js"
   },
   "typesVersions": {
     "*": {
       "grpc/transformers": [
-        "dist/common/grpc/transformers/index.d.ts"
+        "dist/grpc/transformers/index.d.ts"
       ],
       "grpc/filters": [
-        "dist/common/grpc/filters/index.d.ts"
+        "dist/grpc/filters/index.d.ts"
       ],
       "grpc/interceptors": [
-        "dist/common/grpc/interceptors/index.d.ts"
+        "dist/grpc/interceptors/index.d.ts"
       ],
       "validators": [
-        "dist/common/validators/index.d.ts"
+        "dist/validators/index.d.ts"
       ]
     }
   },
