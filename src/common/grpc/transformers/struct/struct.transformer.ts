@@ -2,13 +2,10 @@ import type { IStruct, IValue, StructType } from './struct.interface';
 
 export class StructTransformer {
   static toStruct(obj: object): IStruct {
-    const fields: { key: string; value: IValue }[] = [];
-    Object.entries(obj).forEach(([key, value]) => {
-      fields.push({
-        key,
-        value: StructTransformer.toStructField(value),
-      });
-    });
+    const fields: Record<string, IValue> = {};
+    Object.entries(obj).forEach(
+      ([key, value]) => (fields[key] = StructTransformer.toStructField(value)),
+    );
 
     return {
       fields,
@@ -54,11 +51,11 @@ export class StructTransformer {
       return value;
     }
 
-    if (StructTransformer.isStruct(value) && value.fields?.length) {
+    if (StructTransformer.isStruct(value) && value?.fields) {
       const result: Record<string, any> = {};
-      for (const f of Object.values(value.fields)) {
-        result[f.key] = StructTransformer.extractValue(f.value);
-      }
+      Object.entries(value.fields).forEach(
+        ([key, value]) => (result[key] = StructTransformer.extractValue(value)),
+      );
 
       return result;
     }

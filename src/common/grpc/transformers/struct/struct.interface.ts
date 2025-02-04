@@ -1,5 +1,5 @@
 export interface IStruct {
-  fields?: IStructItem[];
+  fields?: Record<string, IValue>;
 }
 
 interface IListValue {
@@ -14,11 +14,6 @@ export interface IValue {
   boolValue?: boolean;
   structValue?: IStruct;
   listValue?: IListValue;
-}
-
-interface IStructItem {
-  key: string;
-  value: IValue;
 }
 
 export type StructType =

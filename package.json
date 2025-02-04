@@ -26,6 +26,16 @@
     "type": "git",
     "url": "git+https://github.com/RuSS-B/nestjs-common-tools.git"
   },
+  "exports": {
+    ".": "./dist/index.js",
+    "./grpc/transformers": "./dist/common/grpc/transformers/index.js",
+    "./validators": "./dist/common/grpc/validators/index.js"
+  },
+  "typesVersions": {
+    "*": {
+      "grpc/transformers": ["dist/grpc/transformers/index.d.ts"]
+    }
+  },
   "peerDependencies": {
     "@grpc/grpc-js": "^1.12.5",
     "@nestjs/common": "^11.0.0",
