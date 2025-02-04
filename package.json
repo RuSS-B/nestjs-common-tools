@@ -1,6 +1,6 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "NestJS and TypeORM utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,22 +30,42 @@
     "@grpc/grpc-js": "^1.12.5",
     "@nestjs/common": "^11.0.0",
     "@nestjs/microservices": "^11.0.7",
-    "typeorm": "^0.3.20"
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "protobufjs": "^7.4.0",
+    "typeorm": "^0.3.20",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
     "ts-proto": "^2.6.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },
-  "dependencies": {
-    "protobufjs": "^7.4.0",
-    "uuid": "^11.0.5"
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
   }
 }

@@ -6,8 +6,8 @@ import {
 import { Injectable } from '@nestjs/common';
 import { validate } from 'uuid';
 import { EntityManager } from 'typeorm';
-import { IS_ENTITY } from '@common/validators/entity/entity.constant';
-import { EntityValidationOptions } from '@common/validators/entity/entity.interface';
+import { IS_ENTITY } from './entity.constant';
+import { EntityValidationOptions } from './entity.interface';
 
 @ValidatorConstraint({ name: IS_ENTITY, async: true })
 @Injectable()
