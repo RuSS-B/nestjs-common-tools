@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package package_two;
+
+import "google/protobuf/struct.proto";
+
+message PackageSubMessage {
+    google.protobuf.Struct config = 1;
+}
