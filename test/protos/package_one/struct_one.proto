@@ -30,12 +30,23 @@ message SimpleMessage {
     int32 value = 2;
 }
 
+message SimpleNestedRequest {
+    string title = 1;
+    google.protobuf.Struct settings = 2;
+}
+
+message SimpleNestedResponse {
+    string title = 1;
+    google.protobuf.Struct settings = 2;
+}
+
 message NestedArrayMessage {
     google.protobuf.Struct metadata = 1;
     repeated SubMessage nested_array = 2;
 }
 
 service TestService {
+    rpc SimpleNested (SimpleNestedRequest) returns (SimpleNestedResponse);
     rpc ProcessNested (NestedMessage) returns (NestedMessage);
     rpc ProcessDeepNested (DeepNestedMessage) returns (DeepNestedMessage);
     rpc ProcessSimple (SimpleMessage) returns (SimpleMessage);
