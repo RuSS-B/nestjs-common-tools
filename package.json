@@ -1,6 +1,6 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.1.13",
+  "version": "1.1.15",
   "description": "NestJS and TypeORM utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,6 +29,7 @@
   },
   "exports": {
     ".": "./dist/index.js",
+    "./grpc": "./dist/grpc/index.js",
     "./grpc/transformers": "./dist/grpc/transformers/index.js",
     "./grpc/filters": "./dist/grpc/filters/index.js",
     "./grpc/interceptors": "./dist/grpc/interceptors/index.js",
@@ -36,6 +37,7 @@
   },
   "typesVersions": {
     "*": {
+      "grpc": ["dist/grpc/index.d.ts"],
       "grpc/transformers": [
         "dist/grpc/transformers/index.d.ts"
       ],
