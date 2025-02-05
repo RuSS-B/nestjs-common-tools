@@ -209,4 +209,71 @@ describe('StructInterceptor', () => {
       error: (error) => done(error),
     });
   });
+
+  it('should transform an array of fields', (done) => {
+    const responseData = {
+      data: [
+        {
+          name: 'One',
+          settings: { a: 'b', c: 'd' },
+        },
+        {
+          name: 'Two',
+          settings: { a: 'e', c: 'f' },
+        },
+        {
+          name: 'Three',
+          settings: {},
+        },
+      ],
+    };
+
+    const expectedResult = {
+      data: [
+        {
+          name: 'One',
+          settings: {
+            fields: {
+              a: { stringValue: 'b' },
+              c: { stringValue: 'd' },
+            },
+          },
+        },
+        {
+          name: 'Two',
+          settings: {
+            fields: {
+              a: { stringValue: 'e' },
+              c: { stringValue: 'f' },
+            },
+          },
+        },
+        {
+          name: 'Three',
+          settings: {
+            fields: {},
+          },
+        },
+      ],
+    };
+
+    const executionContext = getExecutionContext({});
+    mockGrpcMetadata(serviceName, 'ProcessNestedArray');
+
+    const next: CallHandler = {
+      handle: () => of({ ...responseData }),
+    };
+
+    interceptor.intercept(executionContext, next).subscribe({
+      next: (result) => {
+        try {
+          expect(result).toEqual(expectedResult);
+          done();
+        } catch (error) {
+          done(error);
+        }
+      },
+      error: (error) => done(error),
+    });
+  });
 });

@@ -36,6 +36,7 @@ export class StructInterceptor implements NestInterceptor {
     context.getArgs()[0] = this.traverseAndTransform(
       grpcContext.getData(),
       fields,
+      StructTransformer.toObject,
     );
     return next.handle().pipe(
       map((data: any) => {
@@ -48,29 +49,46 @@ export class StructInterceptor implements NestInterceptor {
           GOOGLE_PROTOBUF_STRUCT,
         );
 
-        fields.forEach((f) => {
-          if (Array.isArray(data[f.name])) {
-            data[f.name] = data[f.name].map((v: any) =>
-              StructTransformer.toStruct(v),
-            );
-          } else {
-            data[f.name] = StructTransformer.toStruct(data[f.name]);
-          }
-        });
-
-        return data;
+        return this.traverseAndTransform(
+          data,
+          fields,
+          StructTransformer.toStruct,
+        );
       }),
     );
   }
 
-  private traverseAndTransform(obj: any, fields: IFoundField[]) {
-    fields.forEach(
-      (f) =>
-        (obj[f.name] = f.fields?.length
-          ? this.traverseAndTransform(obj[f.name], f.fields)
-          : StructTransformer.toObject(obj[f.name])),
-    );
+  private traverseAndTransform<T>(
+    obj: T,
+    fields: IFoundField[],
+    transformer: (value: any) => any,
+  ): T {
+    if (!obj) {
+      return obj;
+    }
 
-    return obj;
+    if (Array.isArray(obj)) {
+      return obj.map((item) =>
+        this.traverseAndTransform(item, fields, transformer),
+      ) as T;
+    }
+
+    const result = { ...obj };
+
+    fields.forEach((f) => {
+      const key = f.name as keyof T;
+
+      if (f.fields?.length) {
+        result[key] = this.traverseAndTransform(
+          result[key],
+          f.fields,
+          transformer,
+        );
+      } else {
+        result[key] = transformer(result[key]);
+      }
+    });
+
+    return result;
   }
 }
