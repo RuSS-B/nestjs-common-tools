@@ -11,6 +11,22 @@ describe('StructInterceptor', () => {
   let packageDefinitionService: GrpcPackageDefinitionService;
   let packageDefinition: PackageDefinition;
   const packageName = 'package_one';
+  const serviceName = 'TestService';
+
+  const getExecutionContext = (requestData: any) => {
+    const args = [requestData];
+    return {
+      switchToRpc: () => ({
+        getData: () => requestData,
+      }),
+      getHandler: () => ({}),
+      getArgs: () => args,
+    } as unknown as ExecutionContext;
+  };
+
+  const mockGrpcMetadata = (service: string, rpc: string) => {
+    jest.spyOn(Reflect, 'getMetadata').mockReturnValue([{ service, rpc }]);
+  };
 
   beforeAll(async () => {
     const protoDir = join(__dirname, '../../../test/protos/');
@@ -61,25 +77,15 @@ describe('StructInterceptor', () => {
       },
     };
 
-    const args = [requestData];
-    const executionContext = {
-      switchToRpc: () => ({
-        getData: () => requestData,
-      }),
-      getHandler: () => ({}),
-      getArgs: () => args,
-    } as unknown as ExecutionContext;
-
-    jest
-      .spyOn(Reflect, 'getMetadata')
-      .mockReturnValue([{ service: 'TestService', rpc: 'SimpleNested' }]);
+    const executionContext = getExecutionContext(requestData);
+    mockGrpcMetadata(serviceName, 'SimpleNested');
 
     const next: CallHandler = {
       handle: () => of({}),
     };
 
     interceptor.intercept(executionContext, next);
-    expect(args[0]).toEqual(expectedTransformedRequest);
+    expect(executionContext.getArgs()[0]).toEqual(expectedTransformedRequest);
     done();
   });
 
@@ -102,17 +108,8 @@ describe('StructInterceptor', () => {
       },
     };
 
-    const executionContext = {
-      switchToRpc: () => ({
-        getData: () => ({}),
-      }),
-      getHandler: () => ({}),
-      getArgs: () => [{}],
-    } as unknown as ExecutionContext;
-
-    jest
-      .spyOn(Reflect, 'getMetadata')
-      .mockReturnValue([{ service: 'TestService', rpc: 'SimpleNested' }]);
+    const executionContext = getExecutionContext({});
+    mockGrpcMetadata(serviceName, 'SimpleNested');
 
     const next: CallHandler = {
       handle: () => of(responseData),
@@ -120,12 +117,14 @@ describe('StructInterceptor', () => {
 
     interceptor.intercept(executionContext, next).subscribe({
       next: (result) => {
-        expect(result).toEqual(expectedTransformedResponse);
-        done();
+        try {
+          expect(result).toEqual(expectedTransformedResponse);
+          done();
+        } catch (error) {
+          done(error);
+        }
       },
-      error: (error) => {
-        done(error);
-      },
+      error: (error) => done(error),
     });
   });
 
@@ -135,17 +134,8 @@ describe('StructInterceptor', () => {
       value: 42,
     };
 
-    const executionContext = {
-      switchToRpc: () => ({
-        getData: () => normalData,
-      }),
-      getHandler: () => ({}),
-      getArgs: () => [normalData],
-    } as unknown as ExecutionContext;
-
-    jest
-      .spyOn(Reflect, 'getMetadata')
-      .mockReturnValue([{ service: 'TestService', rpc: 'ProcessSimple' }]);
+    const executionContext = getExecutionContext(normalData);
+    mockGrpcMetadata(serviceName, 'ProcessSimple');
 
     const next: CallHandler = {
       handle: () => of(normalData),
@@ -153,12 +143,14 @@ describe('StructInterceptor', () => {
 
     interceptor.intercept(executionContext, next).subscribe({
       next: (result) => {
-        expect(result).toEqual(normalData);
-        done();
+        try {
+          expect(result).toEqual(normalData);
+          done();
+        } catch (error) {
+          done(error);
+        }
       },
-      error: (error) => {
-        done(error);
-      },
+      error: (error) => done(error),
     });
   });
 
@@ -168,30 +160,53 @@ describe('StructInterceptor', () => {
       value: 42,
     };
 
-    const executionContext = {
-      switchToRpc: () => ({
-        getData: () => normalData,
-      }),
-      getHandler: () => ({}),
-      getArgs: () => [normalData],
-    } as unknown as ExecutionContext;
+    const data = [normalData, normalData, normalData];
+
+    const executionContext = getExecutionContext(data);
 
     jest
       .spyOn(Reflect, 'getMetadata')
       .mockReturnValue([{ service: 'TestService', rpc: 'ProcessSimpleArray' }]);
 
     const next: CallHandler = {
-      handle: () => of({ data: [normalData, normalData, normalData] }),
+      handle: () => of({ data }),
     };
 
     interceptor.intercept(executionContext, next).subscribe({
       next: (result) => {
-        expect(result).toEqual({ data: [normalData, normalData, normalData] });
-        done();
+        try {
+          expect(result).toEqual({ data });
+          done();
+        } catch (error) {
+          done(error);
+        }
       },
-      error: (error) => {
-        done(error);
+      error: (error) => done(error),
+    });
+  });
+
+  it('should not transform anything if there is no field', (done) => {
+    const responseData = {
+      data: [],
+    };
+
+    const executionContext = getExecutionContext({});
+    mockGrpcMetadata(serviceName, 'ProcessNestedArray');
+
+    const next: CallHandler = {
+      handle: () => of({ data: [] }),
+    };
+
+    interceptor.intercept(executionContext, next).subscribe({
+      next: (result) => {
+        try {
+          expect(result).toEqual(responseData);
+          done();
+        } catch (error) {
+          done(error);
+        }
       },
+      error: (error) => done(error),
     });
   });
 });

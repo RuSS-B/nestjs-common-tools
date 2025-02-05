@@ -8,17 +8,17 @@ import "package_two/struct_two.proto";
 message NestedMessage {
     google.protobuf.Struct metadata = 1;
     repeated google.protobuf.Struct items = 2;
-    SubMessage nested = 3;
+    StructMessage nested = 3;
     PackageSubMessage external_nested = 4;
 }
 
-message SubMessage {
-    google.protobuf.Struct config = 1;
+message StructMessage {
+    google.protobuf.Struct settings = 1;
 }
 
 message DeepNestedMessage {
     google.protobuf.Struct metadata = 1;
-    SubMessage nested = 2;
+    StructMessage nested = 2;
     message DeepSubMessage {
         google.protobuf.Struct settings = 1;
     }
@@ -42,12 +42,17 @@ message SimpleNestedResponse {
 
 message NestedArrayMessage {
     google.protobuf.Struct metadata = 1;
-    repeated SubMessage nested_array = 2;
+    repeated StructMessage nested_array = 2;
 }
 
 message SimpleMessageArrayResponse {
     repeated SimpleMessage data = 1;
 }
+
+message NestedMessageArrayResponse {
+    repeated StructMessage data = 1;
+}
+
 
 service TestService {
     rpc SimpleNested (SimpleNestedRequest) returns (SimpleNestedResponse);
@@ -55,5 +60,5 @@ service TestService {
     rpc ProcessDeepNested (DeepNestedMessage) returns (DeepNestedMessage);
     rpc ProcessSimple (SimpleMessage) returns (SimpleMessage);
     rpc ProcessSimpleArray (SimpleMessage) returns (SimpleMessageArrayResponse);
-    rpc ProcessNestedArray (NestedArrayMessage) returns (NestedArrayMessage);
+    rpc ProcessNestedArray (SimpleMessage) returns (NestedMessageArrayResponse);
 }

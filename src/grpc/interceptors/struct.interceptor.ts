@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
 import { StructTransformer } from '../transformers';
-import { GrpcPackageDefinitionService } from '../services/grpc-package-definition.service';
+import { GrpcPackageDefinitionService } from '../services';
 import { PATTERN_METADATA } from '@nestjs/microservices/constants';
 import { IFoundField } from '../interfaces';
 
@@ -48,9 +48,15 @@ export class StructInterceptor implements NestInterceptor {
           GOOGLE_PROTOBUF_STRUCT,
         );
 
-        fields.forEach(
-          (f) => (data[f.name] = StructTransformer.toStruct(data[f.name])),
-        );
+        fields.forEach((f) => {
+          if (Array.isArray(data[f.name])) {
+            data[f.name] = data[f.name].map((v: any) =>
+              StructTransformer.toStruct(v),
+            );
+          } else {
+            data[f.name] = StructTransformer.toStruct(data[f.name]);
+          }
+        });
 
         return data;
       }),

@@ -126,7 +126,7 @@ describe('GrpcPackageDefinitionService', () => {
       expect(structFields).toEqual([
         { name: 'metadata' },
         { name: 'items' },
-        { name: 'nested', fields: [{ name: 'config' }] },
+        { name: 'nested', fields: [{ name: 'settings' }] },
         { name: 'external_nested', fields: [{ name: 'config' }] },
       ]);
     });
