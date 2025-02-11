@@ -29,13 +29,19 @@ export abstract class BaseEntityService<T extends ObjectLiteral> {
     id: number | number[] | string | string[] | FindOptionsWhere<T>,
     entity: T | DeepPartial<T>,
     options?: FindOneOptions<T>,
-  ): Promise<T | null> {
+  ): Promise<T> {
     if (!options || !options.where) {
       options = { ...options, ...{ where: { id } } } as FindOneOptions;
     }
     await this.repository.update(id, entity as QueryDeepPartialEntity<T>);
 
-    return this.findOne(options);
+    const data = await this.findOne(options);
+
+    if (data === null) {
+      throw new Error(`Unable to find ${id}`);
+    }
+
+    return data;
   }
 
   async findOne(options: FindOneOptions<T>): Promise<T | null> {

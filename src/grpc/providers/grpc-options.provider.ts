@@ -4,7 +4,7 @@ import { ReflectionService } from '@grpc/reflection';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { PackageDefinition } from '@grpc/proto-loader';
-import { GrpcPackageDefinitionService } from '../services';
+import { PackageDefinitionService } from '../services/package-definition';
 
 interface IOptions {
   usePackageDefinitionService?: boolean;
@@ -17,7 +17,7 @@ interface IOptions {
 @Injectable()
 export class GrpcOptionsProvider {
   constructor(
-    private readonly grpcPackageDefinitionService: GrpcPackageDefinitionService,
+    private readonly grpcPackageDefinitionService: PackageDefinitionService,
   ) {}
 
   getOptions(
@@ -47,8 +47,8 @@ export class GrpcOptionsProvider {
         onLoadPackageDefinition: (pkg: PackageDefinition, server) => {
           if (options.usePackageDefinitionService) {
             this.grpcPackageDefinitionService.setPackageDefinition(
-              pkg,
               packageName,
+              pkg,
             );
           }
 

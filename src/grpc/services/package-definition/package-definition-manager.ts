@@ -1,61 +1,31 @@
-import { Injectable, Scope } from '@nestjs/common';
 import {
   MethodDefinition,
   PackageDefinition,
   ServiceDefinition,
 } from '@grpc/proto-loader';
-import {
-  IField,
-  IFoundField,
-  IMessageDefinition,
-  IMessageTypeDefinition,
-} from '../interfaces';
+import { IField, IFoundField, IMessageDefinition } from '../../interfaces';
 
-/**
- * Service for managing and accessing gRPC package definitions.
- * Provides methods to work with services, methods, and their field definitions.
- */
-@Injectable({ scope: Scope.DEFAULT })
-export class GrpcPackageDefinitionService {
-  private packageDefinition: PackageDefinition | null = null;
-  private packageName: string;
+export class PackageDefinitionManager {
+  constructor(
+    private readonly packageName: string,
+    private readonly packageDefinition: PackageDefinition,
+  ) {}
 
-  setPackageDefinition(pkg: PackageDefinition, packageName: string) {
-    this.packageDefinition = pkg;
-    this.packageName = packageName;
-  }
-
-  getPackageDefinition(): PackageDefinition {
-    if (!this.packageDefinition) {
-      throw new Error('PackageDefinition not initialized');
-    }
-
-    return this.packageDefinition;
-  }
-
-  getPackageName(): string {
-    if (!this.packageName) {
-      throw new Error('PackageDefinition not initialized');
-    }
-
+  getPackageName() {
     return this.packageName;
   }
 
   getServiceDefinition(serviceName: string): ServiceDefinition | undefined {
-    const packageDefinition = this.getPackageDefinition();
-
-    return packageDefinition[
-      `${this.getPackageName()}.${serviceName}`
+    return this.packageDefinition[
+      `${this.packageName}.${serviceName}`
     ] as ServiceDefinition;
   }
 
   getMessageDefinition(messageName: string): IMessageDefinition {
-    const packageDefinition = this.getPackageDefinition();
-
-    const message = packageDefinition[messageName];
+    const message = this.packageDefinition[messageName];
 
     if (!message) {
-      return packageDefinition[
+      return this.packageDefinition[
         `${this.getPackageName()}.${messageName}`
       ] as IMessageDefinition;
     } else {
@@ -70,7 +40,7 @@ export class GrpcPackageDefinitionService {
     const serviceDefinition = this.getServiceDefinition(serviceName);
 
     if (!serviceDefinition) {
-      return serviceDefinition;
+      return undefined;
     }
 
     return serviceDefinition[rpc];

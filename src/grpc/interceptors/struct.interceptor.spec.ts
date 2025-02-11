@@ -1,14 +1,14 @@
 import { ExecutionContext, CallHandler } from '@nestjs/common';
 import { of } from 'rxjs';
 import { StructInterceptor } from './struct.interceptor';
-import { GrpcPackageDefinitionService } from '../services';
+import { PackageDefinitionService } from '../services/package-definition';
 import { Test } from '@nestjs/testing';
 import { join } from 'path';
 import { loadSync, PackageDefinition } from '@grpc/proto-loader';
 
 describe('StructInterceptor', () => {
   let interceptor: StructInterceptor;
-  let packageDefinitionService: GrpcPackageDefinitionService;
+  let packageDefinitionService: PackageDefinitionService;
   let packageDefinition: PackageDefinition;
   const packageName = 'package_one';
   const serviceName = 'TestService';
@@ -44,17 +44,17 @@ describe('StructInterceptor', () => {
     });
 
     const moduleRef = await Test.createTestingModule({
-      providers: [StructInterceptor, GrpcPackageDefinitionService],
+      providers: [StructInterceptor, PackageDefinitionService],
     }).compile();
 
     interceptor = moduleRef.get<StructInterceptor>(StructInterceptor);
-    packageDefinitionService = moduleRef.get<GrpcPackageDefinitionService>(
-      GrpcPackageDefinitionService,
+    packageDefinitionService = moduleRef.get<PackageDefinitionService>(
+      PackageDefinitionService,
     );
 
     packageDefinitionService.setPackageDefinition(
-      packageDefinition,
       packageName,
+      packageDefinition,
     );
   });
 

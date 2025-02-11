@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
 import { StructTransformer } from '../transformers';
-import { GrpcPackageDefinitionService } from '../services';
+import { PackageDefinitionService } from '../services/package-definition';
 import { PATTERN_METADATA } from '@nestjs/microservices/constants';
 import { IFoundField } from '../interfaces';
 
@@ -15,7 +15,7 @@ const GOOGLE_PROTOBUF_STRUCT = 'google.protobuf.Struct';
 @Injectable()
 export class StructInterceptor implements NestInterceptor {
   constructor(
-    private readonly packageDefinitionService: GrpcPackageDefinitionService,
+    private readonly packageDefinitionService: PackageDefinitionService,
   ) {}
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const grpcContext = context.switchToRpc();
@@ -24,14 +24,12 @@ export class StructInterceptor implements NestInterceptor {
       context.getHandler(),
     )[0];
 
-    const protoFields = this.packageDefinitionService.getRequestFields(
-      service,
-      rpc,
-    );
-    const fields = this.packageDefinitionService.findFieldsByType(
-      protoFields,
-      GOOGLE_PROTOBUF_STRUCT,
-    );
+    const protoFields = this.packageDefinitionService
+      .getManager()
+      .getRequestFields(service, rpc);
+    const fields = this.packageDefinitionService
+      .getManager()
+      .findFieldsByType(protoFields, GOOGLE_PROTOBUF_STRUCT);
 
     context.getArgs()[0] = this.traverseAndTransform(
       grpcContext.getData(),
@@ -40,14 +38,12 @@ export class StructInterceptor implements NestInterceptor {
     );
     return next.handle().pipe(
       map((data: any) => {
-        const protoFields = this.packageDefinitionService.getResponseFields(
-          service,
-          rpc,
-        );
-        const fields = this.packageDefinitionService.findFieldsByType(
-          protoFields,
-          GOOGLE_PROTOBUF_STRUCT,
-        );
+        const protoFields = this.packageDefinitionService
+          .getManager()
+          .getResponseFields(service, rpc);
+        const fields = this.packageDefinitionService
+          .getManager()
+          .findFieldsByType(protoFields, GOOGLE_PROTOBUF_STRUCT);
 
         return this.traverseAndTransform(
           data,

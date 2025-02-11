@@ -1,7 +1,7 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.1.22",
-  "description": "NestJS and TypeORM utility tools",
+  "version": "1.2.0",
+  "description": "NestJS and gRPC utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -18,8 +18,9 @@
   "keywords": [
     "nestjs",
     "typeorm",
-    "repository",
-    "database"
+    "database",
+    "grpc",
+    "tools"
   ],
   "author": "RuSS-B",
   "license": "MIT",
@@ -38,23 +39,30 @@
       "grpc": [
         "dist/grpc/index.d.ts"
       ],
-      "grpc/*": ["dist/grpc/*/index.d.ts"],
+      "grpc/*": [
+        "dist/grpc/*/index.d.ts"
+      ],
       "validators": [
         "dist/validators/index.d.ts"
       ]
     }
   },
-  "peerDependencies": {
-    "@grpc/reflection": "^1.0.4",
-    "@nestjs/config": "^4.0.0",
-    "@grpc/grpc-js": "^1.12.5",
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/microservices": "^11.0.7",
+  "dependencies": {
     "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.1",
+    "class-validator": "^0.14.1"
+  },
+  "peerDependencies": {
+    "@grpc/grpc-js": "^1.12.5",
+    "@grpc/reflection": "^1.0.4",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^3.0.0 || ^4.0.0",
+    "@nestjs/microservices": "^11.0.7",
     "protobufjs": "^7.4.0",
     "typeorm": "^0.3.20",
-    "uuid": "^11.0.5"
+    "uuid": "^11.0.5",
+    "winston": "^3.17.0",
+    "winston-transport": "^4.9.0",
+    "nest-winston": "^1.10.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
