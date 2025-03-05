@@ -1,7 +1,7 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.2.0",
-  "description": "NestJS and gRPC utility tools",
+  "version": "1.3.2",
+  "description": "NestJS utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -19,7 +19,6 @@
     "nestjs",
     "typeorm",
     "database",
-    "grpc",
     "tools"
   ],
   "author": "RuSS-B",
@@ -30,18 +29,10 @@
   },
   "exports": {
     ".": "./dist/index.js",
-    "./grpc": "./dist/grpc/index.js",
-    "./grpc/*": "./dist/grpc/*/index.js",
     "./validators": "./dist/validators/index.js"
   },
   "typesVersions": {
     "*": {
-      "grpc": [
-        "dist/grpc/index.d.ts"
-      ],
-      "grpc/*": [
-        "dist/grpc/*/index.d.ts"
-      ],
       "validators": [
         "dist/validators/index.d.ts"
       ]
@@ -52,11 +43,8 @@
     "class-validator": "^0.14.1"
   },
   "peerDependencies": {
-    "@grpc/grpc-js": "^1.12.5",
-    "@grpc/reflection": "^1.0.4",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^3.0.0 || ^4.0.0",
-    "@nestjs/microservices": "^11.0.7",
     "protobufjs": "^7.4.0",
     "typeorm": "^0.3.20",
     "uuid": "^11.0.5",

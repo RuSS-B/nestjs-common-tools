@@ -17,12 +17,20 @@ export abstract class BaseEntityService<T extends ObjectLiteral> {
 
   protected constructor(protected readonly repository: Repository<T>) {}
 
-  async create(entity: T | DeepPartial<T>): Promise<T> {
-    return await this.save(entity);
+  create(entity: T | DeepPartial<T>): T {
+    return this.repository.create(entity);
   }
 
-  async save(entity: T | DeepPartial<T>, options?: SaveOptions): Promise<T> {
-    return (await this.repository.save(entity, options)) as T;
+  async save(entity: T | DeepPartial<T>): Promise<T>;
+  async save(entities: (T | DeepPartial<T>)[]): Promise<T[]>;
+  async save(
+    entityOrEntities: T | DeepPartial<T> | (T | DeepPartial<T>)[],
+    options?: SaveOptions,
+  ): Promise<T | T[]> {
+    if (Array.isArray(entityOrEntities)) {
+      return await this.repository.save(entityOrEntities, options);
+    }
+    return await this.repository.save(entityOrEntities, options);
   }
 
   async update(
@@ -95,21 +103,5 @@ export abstract class BaseEntityService<T extends ObjectLiteral> {
       entityOrEntities,
       conflictPathsOrOptions,
     );
-  }
-
-  async createOrUpdate(
-    entity: T | DeepPartial<T>,
-    onUpdate: T | DeepPartial<T>,
-    options: FindOneOptions<T>,
-  ): Promise<[T, boolean]> {
-    const found = await this.findOne(options);
-
-    if (found) {
-      await this.save({ ...found, ...onUpdate });
-
-      return [found, false];
-    } else {
-      return [await this.create(entity), true];
-    }
   }
 }
