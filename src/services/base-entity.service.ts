@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Logger } from '@nestjs/common';
 import { UpsertOptions } from 'typeorm/repository/UpsertOptions';
+import { collectionToMap } from '../common/util';
 
 export abstract class BaseEntityService<T extends ObjectLiteral> {
   protected logger = new Logger(this.constructor.name);
@@ -84,15 +85,8 @@ export abstract class BaseEntityService<T extends ObjectLiteral> {
     await this.repository.softDelete(id);
   }
 
-  toKeyValue(
-    result: T[],
-    key: keyof T,
-    value: keyof T,
-  ): Map<string, T[keyof T]> {
-    const map = new Map<string, T[keyof T]>();
-    result.forEach((item) => map.set(String(item[key]), item[value]));
-
-    return map;
+  toKeyValue(data: T[], key: keyof T, value: keyof T): Map<string, T[keyof T]> {
+    return collectionToMap<T>(data, key, value);
   }
 
   async upsert(

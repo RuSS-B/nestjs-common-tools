@@ -1,6 +1,6 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.3.2",
+  "version": "1.3.5",
   "description": "NestJS utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,25 +29,29 @@
   },
   "exports": {
     ".": "./dist/index.js",
+    "./common/util": "./dist/common/util/index.js",
     "./validators": "./dist/validators/index.js"
   },
   "typesVersions": {
     "*": {
       "validators": [
         "dist/validators/index.d.ts"
+      ],
+      "common/util": [
+        "dist/common/util/index.d.ts"
       ]
     }
   },
   "dependencies": {
     "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.1"
+    "class-validator": "^0.14.1",
+    "uuid": "^11.0.5"
   },
   "peerDependencies": {
-    "@nestjs/common": "^11.0.0",
+    "@nestjs/common": "^10.0.0 || ^11.0.0",
     "@nestjs/config": "^3.0.0 || ^4.0.0",
     "protobufjs": "^7.4.0",
     "typeorm": "^0.3.20",
-    "uuid": "^11.0.5",
     "winston": "^3.17.0",
     "winston-transport": "^4.9.0",
     "nest-winston": "^1.10.2"
