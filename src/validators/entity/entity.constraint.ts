@@ -24,13 +24,6 @@ export class EntityConstraint implements ValidatorConstraintInterface {
       each = false,
       property = 'id',
     } = options as EntityValidationOptions;
-
-    if (isUuid) {
-      if (!this.validateUuid(value)) {
-        return false;
-      }
-    }
-
     if (each) {
       if (!Array.isArray(value)) {
         return false;
@@ -51,13 +44,19 @@ export class EntityConstraint implements ValidatorConstraintInterface {
         .getCount();
 
       return count === value.length;
-    }
+    } else {
+      if (isUuid) {
+        if (!this.validateUuid(value)) {
+          return false;
+        }
+      }
 
-    return await this.entityManager
-      .getRepository(target)
-      .createQueryBuilder('entity')
-      .where({ [property]: value })
-      .getExists();
+      return await this.entityManager
+        .getRepository(target)
+        .createQueryBuilder('entity')
+        .where({ [property]: value })
+        .getExists();
+    }
   }
 
   defaultMessage(validationArguments: ValidationArguments): string {
