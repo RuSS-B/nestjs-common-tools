@@ -1,6 +1,6 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "NestJS utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,7 +31,8 @@
     ".": "./dist/index.js",
     "./common/util": "./dist/common/util/index.js",
     "./common/pagination": "./dist/common/pagination/index.js",
-    "./validators": "./dist/validators/index.js"
+    "./validators": "./dist/validators/index.js",
+    "./modules": "./dist/modules/index.js"
   },
   "typesVersions": {
     "*": {
@@ -43,6 +44,9 @@
       ],
       "common/pagination": [
         "dist/common/pagination/index.d.ts"
+      ],
+      "modules/s3": [
+        "dist/modules/s3/index.d.ts"
       ]
     }
   },
