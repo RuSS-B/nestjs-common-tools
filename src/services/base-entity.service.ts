@@ -40,7 +40,8 @@ export abstract class BaseEntityService<T extends ObjectLiteral> {
     options?: FindOneOptions<T>,
   ): Promise<T> {
     if (!options || !options.where) {
-      options = { ...options, ...{ where: { id } } } as FindOneOptions;
+      const where = typeof id === 'object' && !Array.isArray(id) ? id : { id };
+      options = { ...options, ...{ where } } as FindOneOptions;
     }
     await this.repository.update(id, entity as QueryDeepPartialEntity<T>);
 
