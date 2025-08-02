@@ -1,6 +1,6 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "1.5.3",
+  "version": "1.8.0",
   "description": "NestJS utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,8 +31,10 @@
     ".": "./dist/index.js",
     "./common/util": "./dist/common/util/index.js",
     "./common/pagination": "./dist/common/pagination/index.js",
+    "./common/filters": "./dist/common/filters/index.js",
     "./validators": "./dist/validators/index.js",
-    "./modules": "./dist/modules/index.js"
+    "./modules": "./dist/modules/index.js",
+    "./logger": "./dist/logger/index.js"
   },
   "typesVersions": {
     "*": {
@@ -45,8 +47,14 @@
       "common/pagination": [
         "dist/common/pagination/index.d.ts"
       ],
+      "common/filters": [
+        "dist/common/filters/index.d.ts"
+      ],
       "modules": [
         "dist/modules/index.d.ts"
+      ],
+      "logger": [
+        "dist/logger/index.d.ts"
       ]
     }
   },
@@ -56,14 +64,15 @@
     "uuid": "^11.0.5"
   },
   "peerDependencies": {
+    "@aws-sdk/lib-storage": "^3.0.0",
+    "@aws-sdk/client-s3": "^3.0.0",
     "@nestjs/common": "^10.0.0 || ^11.0.0",
     "@nestjs/config": "^3.0.0 || ^4.0.0",
+    "nest-winston": "^1.10.2",
     "protobufjs": "^7.4.0",
     "typeorm": "^0.3.20",
     "winston": "^3.17.0",
-    "winston-transport": "^4.9.0",
-    "nest-winston": "^1.10.2",
-    "@aws-sdk/client-s3": "^3.0.0"
+    "winston-transport": "^4.9.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

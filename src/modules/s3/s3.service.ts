@@ -7,6 +7,9 @@ import {
 } from '@aws-sdk/client-s3';
 import { S3_CLIENT, S3_MODULE_OPTIONS } from './s3.constants';
 import { Readable } from 'stream';
+import { Upload } from '@aws-sdk/lib-storage';
+import { StreamingBlobPayloadInputTypes } from '@smithy/types/dist-types/streaming-payload/streaming-blob-payload-input-types';
+import { UploadParams } from './s3.interface';
 
 @Injectable()
 export class S3Service {
@@ -20,17 +23,38 @@ export class S3Service {
     this.bucket = this.options.bucket;
   }
 
+  async upload(
+    key: string,
+    body: StreamingBlobPayloadInputTypes,
+    contentType = 'application/octet-stream',
+    params?: UploadParams,
+  ): Promise<void> {
+    const upload = new Upload({
+      client: this.s3Client,
+      params: {
+        Bucket: params?.bucket || this.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        ACL: params?.acl || 'public-read',
+      },
+    });
+
+    await upload.done();
+  }
+
   async uploadObject(
     key: string,
-    body: Buffer | Uint8Array | string,
+    body: StreamingBlobPayloadInputTypes,
     contentType = 'application/octet-stream',
+    params?: UploadParams,
   ): Promise<void> {
     const command = new PutObjectCommand({
-      Bucket: this.bucket,
+      Bucket: params?.bucket || this.bucket,
       Key: key,
       Body: body,
       ContentType: contentType,
-      ACL: 'public-read',
+      ACL: params?.acl || 'public-read',
     });
 
     try {
@@ -42,9 +66,9 @@ export class S3Service {
     }
   }
 
-  async deleteObject(key: string): Promise<void> {
+  async deleteObject(key: string, bucket?: string): Promise<void> {
     const command = new DeleteObjectCommand({
-      Bucket: this.bucket,
+      Bucket: bucket || this.bucket,
       Key: key,
     });
 
@@ -57,9 +81,9 @@ export class S3Service {
     }
   }
 
-  async getObject(key: string): Promise<Readable> {
+  async getObject(key: string, bucket?: string): Promise<Readable> {
     const command = new GetObjectCommand({
-      Bucket: this.bucket,
+      Bucket: bucket || this.bucket,
       Key: key,
     });
 
