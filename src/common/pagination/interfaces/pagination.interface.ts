@@ -13,6 +13,18 @@ export interface IPaginatedResponse<T> {
   pagination: IPaginationData;
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
+export interface PaginationMeta {
+  total: number;
+  pages: number;
+  page: number;
+  perPage: number;
+}
+
 export interface IPaginationData {
   totalItems: number;
   totalPages: number;
