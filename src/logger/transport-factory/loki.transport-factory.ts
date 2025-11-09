@@ -6,13 +6,13 @@ export class LokiTransportFactory implements TransportFactory {
   constructor(
     private readonly level: string,
     private readonly lokiUrl: string,
-    private readonly serviceName: string,
+    private readonly labels: Record<string, any>,
   ) {}
 
   createTransport(): LokiTransport {
     return new LokiTransport({
       host: this.lokiUrl,
-      labels: { service: this.serviceName },
+      labels: this.labels,
       json: true,
       level: this.level,
       format: winston.format.json(),
