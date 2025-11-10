@@ -32,6 +32,7 @@ export class LoggerBuilder {
   addTransport(type: 'loki', options: LokiTransportOptions): this;
   addTransport(type: 'json', options?: JsonTransportOptions): this;
   addTransport(type: 'nest', options?: {}): this;
+  addTransport(type: TransportType, options?: Record<string, any>): this;
   addTransport(transportType: TransportType, options?: Record<string, any>) {
     const transport = this.createTransport(transportType, options);
     this.transports.push(transport);
@@ -65,7 +66,7 @@ export class LoggerBuilder {
         return new LokiTransportFactory(
           this.level,
           options.lokiUrl,
-          options.labels || { serviceName: this.appName },
+          options.labels || { service: this.appName },
         ).createTransport();
       case 'nest':
         return new NestTransportFactory(
