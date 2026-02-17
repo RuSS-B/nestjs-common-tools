@@ -33,6 +33,7 @@
     "./common/pagination": "./dist/common/pagination/index.js",
     "./common/filters": "./dist/common/filters/index.js",
     "./validators": "./dist/validators/index.js",
+    "./typeorm": "./dist/typeorm/index.js",
     "./modules": "./dist/modules/index.js",
     "./logger": "./dist/logger/index.js"
   },
@@ -40,6 +41,9 @@
     "*": {
       "validators": [
         "dist/validators/index.d.ts"
+      ],
+      "typeorm": [
+        "dist/typeorm/index.d.ts"
       ],
       "common/util": [
         "dist/common/util/index.d.ts"
