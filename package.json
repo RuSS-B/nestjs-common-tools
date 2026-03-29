@@ -5,15 +5,15 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
-    "build": "npx tsc",
+    "build": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\" && tsc",
     "test": "jest",
     "prepare": "npm run build",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "publish": "npm publish --access public"
+    "format": "prettier --write \"src/**/*.ts\""
   },
   "keywords": [
     "nestjs",
@@ -27,40 +27,43 @@
     "type": "git",
     "url": "git+https://github.com/RuSS-B/nestjs-common-tools.git"
   },
-  "exports": {
-    ".": "./dist/index.js",
-    "./common/util": "./dist/common/util/index.js",
-    "./common/pagination": "./dist/common/pagination/index.js",
-    "./common/filters": "./dist/common/filters/index.js",
-    "./validators": "./dist/validators/index.js",
-    "./typeorm": "./dist/typeorm/index.js",
-    "./modules": "./dist/modules/index.js",
-    "./logger": "./dist/logger/index.js"
+  "publishConfig": {
+    "access": "public"
   },
-  "typesVersions": {
-    "*": {
-      "validators": [
-        "dist/validators/index.d.ts"
-      ],
-      "typeorm": [
-        "dist/typeorm/index.d.ts"
-      ],
-      "common/util": [
-        "dist/common/util/index.d.ts"
-      ],
-      "common/pagination": [
-        "dist/common/pagination/index.d.ts"
-      ],
-      "common/filters": [
-        "dist/common/filters/index.d.ts"
-      ],
-      "modules": [
-        "dist/modules/index.d.ts"
-      ],
-      "logger": [
-        "dist/logger/index.d.ts"
-      ]
-    }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./common/util": {
+      "types": "./dist/common/util/index.d.ts",
+      "default": "./dist/common/util/index.js"
+    },
+    "./common/pagination": {
+      "types": "./dist/common/pagination/index.d.ts",
+      "default": "./dist/common/pagination/index.js"
+    },
+    "./common/filters": {
+      "types": "./dist/common/filters/index.d.ts",
+      "default": "./dist/common/filters/index.js"
+    },
+    "./validators": {
+      "types": "./dist/validators/index.d.ts",
+      "default": "./dist/validators/index.js"
+    },
+    "./typeorm": {
+      "types": "./dist/typeorm/index.d.ts",
+      "default": "./dist/typeorm/index.js"
+    },
+    "./modules": {
+      "types": "./dist/modules/index.d.ts",
+      "default": "./dist/modules/index.js"
+    },
+    "./logger": {
+      "types": "./dist/logger/index.d.ts",
+      "default": "./dist/logger/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "dependencies": {
     "class-transformer": "^0.5.1",
