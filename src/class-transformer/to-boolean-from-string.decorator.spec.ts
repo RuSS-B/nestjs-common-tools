@@ -1,10 +1,10 @@
 import { plainToInstance, Transform } from 'class-transformer';
 import {
-  parseOptionalBooleanTransformer,
-  ToOptionalBoolean,
-} from './to-optional-boolean.decorator';
+  parseBooleanFromStringTransformer,
+  ToBooleanFromString,
+} from './to-boolean-from-string.decorator';
 
-describe('ToOptionalBoolean', () => {
+describe('ToBooleanFromString', () => {
   it('should convert true and false strings to booleans', () => {
     const dto = plainToInstance(FiltersDto, {
       enabled: 'true',
@@ -42,7 +42,7 @@ describe('ToOptionalBoolean', () => {
   });
 });
 
-describe('parseOptionalBooleanTransformer', () => {
+describe('parseBooleanFromStringTransformer', () => {
   it('should work as a raw class-transformer callback', () => {
     const dto = plainToInstance(RawFiltersDto, {
       enabled: ' true ',
@@ -53,14 +53,14 @@ describe('parseOptionalBooleanTransformer', () => {
 });
 
 class FiltersDto {
-  @ToOptionalBoolean()
+  @ToBooleanFromString()
   enabled?: boolean;
 
-  @ToOptionalBoolean()
+  @ToBooleanFromString()
   archived?: boolean | unknown;
 }
 
 class RawFiltersDto {
-  @Transform(parseOptionalBooleanTransformer)
+  @Transform(parseBooleanFromStringTransformer)
   enabled?: boolean;
 }

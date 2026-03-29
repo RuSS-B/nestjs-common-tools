@@ -1,14 +1,14 @@
 import { Transform, TransformFnParams } from 'class-transformer';
 
-export function ToOptionalBoolean(): PropertyDecorator {
-  return Transform(parseOptionalBooleanTransformer);
+export function ToBooleanFromString(): PropertyDecorator {
+  return Transform(parseBooleanFromStringTransformer);
 }
 
-export const parseOptionalBooleanTransformer = ({
+export const parseBooleanFromStringTransformer = ({
   value,
-}: TransformFnParams): unknown => normalizeOptionalBoolean(value);
+}: TransformFnParams): unknown => normalizeBooleanFromString(value);
 
-function normalizeOptionalBoolean(value: unknown): unknown {
+function normalizeBooleanFromString(value: unknown): unknown {
   if (value === undefined) {
     return undefined;
   }

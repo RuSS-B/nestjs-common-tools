@@ -52,17 +52,17 @@ It will:
 - split string values by comma
 - trim extra spaces around items
 - remove empty values
-- normalize values like `'cars, bikes, boats'` or `['cars, bikes', 'boats']` into `['cars', 'bikes', 'boats']`
+- normalize a string like `'cars, bikes, boats'` into `['cars', 'bikes', 'boats']`
 
-### `ToOptionalBoolean`
+### `ToBooleanFromString`
 
-`ToOptionalBoolean()` is useful for DTO fields that may arrive as `'true'` or `'false'` strings and should become real booleans.
+`ToBooleanFromString()` is useful for DTO fields that may arrive as `'true'` or `'false'` strings and should become real booleans.
 
 ```typescript
-import { ToOptionalBoolean } from '@russ-b/nestjs-common-tools/class-transformer';
+import { ToBooleanFromString } from '@russ-b/nestjs-common-tools/class-transformer';
 
 export class SearchDto {
-  @ToOptionalBoolean()
+  @ToBooleanFromString()
   archived?: boolean;
 }
 ```
