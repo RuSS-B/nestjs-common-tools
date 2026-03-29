@@ -1,8 +1,8 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { S3Service } from './s3.service';
-import { S3_CLIENT, S3_MODULE_OPTIONS } from './s3.constants';
-import { S3Client } from '@aws-sdk/client-s3';
+import { S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
 import { S3ModuleAsyncOptions, S3ModuleOptions } from './s3.interface';
+import { S3_CLIENT, S3_MODULE_OPTIONS } from './s3.constants';
+import { S3Service } from './s3.service';
 
 @Module({})
 export class S3Module {
@@ -21,15 +21,13 @@ export class S3Module {
           provide: S3_CLIENT,
           inject: [S3_MODULE_OPTIONS],
           useFactory: (opts: S3ModuleOptions) => {
-            return new S3Client({
+            const clientConfig: S3ClientConfig = {
               region: opts.region || 'us-east-1',
               endpoint: opts.endpoint,
-              credentials: {
-                accessKeyId: opts.accessKeyId,
-                secretAccessKey: opts.secretAccessKey,
-              },
               forcePathStyle: opts.forcePathStyle ?? true,
-            });
+            };
+
+            return new S3Client(clientConfig);
           },
         },
         S3Service,

@@ -15,6 +15,220 @@ npm install @russ-b/nestjs-common-tools
 
 Depending on which features you use, make sure the relevant peer dependencies are also installed in your project.
 
+## Class Transformer Helpers
+
+This package can also expose small reusable decorators for `class-transformer`.
+
+### `ToStringArray`
+
+`ToStringArray()` is useful for DTO query fields that may arrive as a comma-separated string such as `"cars, bikes, boats"` or as an array.
+
+```typescript
+import { ToStringArray } from '@russ-b/nestjs-common-tools/class-transformer';
+
+export class SearchDto {
+  @ToStringArray()
+  tags?: string[];
+}
+```
+
+It will:
+
+- split string values by comma
+- trim extra spaces around items
+- remove empty values
+- flatten array inputs like `['cars, bikes', 'boats']` into `['cars', 'bikes', 'boats']`
+
+### `ToOptionalBoolean`
+
+`ToOptionalBoolean()` is useful for DTO fields that may arrive as `'true'` or `'false'` strings and should become real booleans.
+
+```typescript
+import { ToOptionalBoolean } from '@russ-b/nestjs-common-tools/class-transformer';
+
+export class SearchDto {
+  @ToOptionalBoolean()
+  archived?: boolean;
+}
+```
+
+It will:
+
+- convert `'true'` to `true`
+- convert `'false'` to `false`
+- trim extra spaces and ignore case
+- leave unsupported values unchanged
+
+## S3 Module
+
+`S3Module` is a small NestJS wrapper around the AWS SDK v3 S3 client. It gives you a reusable `S3Service` with a simple Nest-friendly setup for uploads, downloads, deletes, and signed URLs.
+
+### Install S3 peer dependencies
+
+If you want to use the S3 module, install the required AWS peer dependencies in your application:
+
+```bash
+npm install @aws-sdk/client-s3 @aws-sdk/lib-storage @aws-sdk/s3-request-presigner
+```
+
+### Register the module
+
+Import the module from `@russ-b/nestjs-common-tools/modules` and configure it with `forRootAsync`.
+
+```typescript
+// app.module.ts
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { S3Module } from '@russ-b/nestjs-common-tools/modules';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    S3Module.forRootAsync({
+      global: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        region: config.get<string>('AWS_REGION') ?? 'eu-central-1',
+        bucket: config.get<string>('S3_BUCKET'),
+        endpoint: config.get<string>('S3_ENDPOINT'),
+        forcePathStyle: config.get<string>('S3_FORCE_PATH_STYLE') === 'true',
+        logger: config.get<string>('S3_DEBUG') === 'true',
+      }),
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### Credentials
+
+The module does not accept `accessKeyId` or `secretAccessKey` directly. It relies on the AWS SDK default credential chain instead, which means credentials can come from:
+
+- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- local AWS profiles and shared config
+- IAM roles in AWS environments
+
+Example environment variables:
+
+```env
+AWS_REGION=eu-central-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+S3_BUCKET=my-app-bucket
+```
+
+`endpoint` is optional and is mostly useful for S3-compatible providers such as MinIO or LocalStack.
+
+### Optional logging
+
+By default, the module stays silent and does not write S3 operation logs.
+
+If you want extra visibility while testing connectivity with S3 or MinIO, set `logger: true` in the module options. That enables the standard Nest logger for this service.
+
+```typescript
+S3Module.forRootAsync({
+  useFactory: () => ({
+    bucket: 'my-app-bucket',
+    endpoint: 'http://localhost:9000',
+    forcePathStyle: true,
+    logger: true,
+  }),
+});
+```
+
+You can also pass your own Nest-compatible logger object if you want to redirect those logs elsewhere.
+
+### Inject and use the service
+
+```typescript
+// files.service.ts
+import { Injectable } from '@nestjs/common';
+import { Readable } from 'stream';
+import { S3Service } from '@russ-b/nestjs-common-tools/modules';
+
+@Injectable()
+export class FilesService {
+  constructor(private readonly s3Service: S3Service) {}
+
+  async putAvatar(key: string, file: Buffer) {
+    return this.s3Service.putObject(key, file, {
+      contentType: 'image/png',
+      cacheControl: 'public, max-age=31536000, immutable',
+      metadata: {
+        source: 'avatar-service',
+      },
+    });
+  }
+
+  async uploadLargeFile(key: string, stream: Readable) {
+    return this.s3Service.upload(key, stream, {
+      contentType: 'application/pdf',
+      metadata: {
+        source: 'document-service',
+      },
+    });
+  }
+
+  async getAvatar(key: string) {
+    const object = await this.s3Service.getObject(key);
+
+    return {
+      stream: object.body,
+      contentType: object.contentType,
+      cacheControl: object.cacheControl,
+      metadata: object.metadata,
+    };
+  }
+
+  async deleteAvatar(key: string) {
+    return this.s3Service.deleteObject(key);
+  }
+}
+```
+
+### Signed URLs
+
+Use `getSignedUrl` when the client should upload or download directly from S3.
+
+```typescript
+// files.service.ts
+async getAvatarUploadUrl(key: string) {
+  return this.s3Service.getSignedUrl(key, {
+    operation: 'putObject',
+    expiresIn: 300,
+    contentType: 'image/png',
+    cacheControl: 'public, max-age=31536000, immutable',
+    metadata: {
+      source: 'avatar-upload',
+    },
+  });
+}
+
+async getAvatarDownloadUrl(key: string) {
+  return this.s3Service.getSignedUrl(key, {
+    operation: 'getObject',
+    expiresIn: 300,
+  });
+}
+```
+
+When generating a signed `putObject` URL, make sure the client sends the same headers you used during signing, especially `Content-Type` and any custom metadata headers.
+
+### Available methods
+
+| Method | Description |
+|--------|-------------|
+| `putObject(key, body, options)` | Simple upload using `PutObjectCommand` |
+| `upload(key, body, options)` | Managed upload using `@aws-sdk/lib-storage`, useful for larger or streaming payloads |
+| `getObject(key, options)` | Returns the readable stream together with object metadata |
+| `deleteObject(key, options)` | Deletes an object from the configured bucket |
+| `getSignedUrl(key, options)` | Creates a presigned URL for `getObject` or `putObject` |
+
+`uploadObject` is still available as a compatibility alias, but `putObject` is the preferred method name going forward.
+
 ## Entity Validator
 
 A custom validator for NestJS that validates if an entity exists in the database using TypeORM.

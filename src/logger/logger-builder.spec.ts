@@ -31,7 +31,7 @@ describe('LoggerBuilder', () => {
       }).toThrow('lokiUrl is required for Loki transport');
     });
 
-    it('should use default labels with serviceName from appName when no custom labels provided', () => {
+    it('should use default labels with service from appName when no custom labels provided', () => {
       const appName = 'TestApp';
       const builder = new LoggerBuilder(appName, 'debug');
 
@@ -42,7 +42,7 @@ describe('LoggerBuilder', () => {
       expect(LokiTransportFactory).toHaveBeenCalledWith(
         'debug',
         'http://loki:3100',
-        { serviceName: appName },
+        { service: appName },
       );
     });
 
