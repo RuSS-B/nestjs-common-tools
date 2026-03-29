@@ -1,5 +1,4 @@
 # nestjs-common-tools
-NestJS Common Tools
 
 A small toolbox for NestJS with helpers that often come up in day-to-day development.
 
@@ -15,9 +14,25 @@ npm install @russ-b/nestjs-common-tools
 
 Depending on which features you use, make sure the relevant peer dependencies are also installed in your project.
 
+## Public entrypoints
+
+This package uses subpath exports for most features.
+
+| Import path | What it contains |
+|-------------|------------------|
+| `@russ-b/nestjs-common-tools` | root exports such as `services` |
+| `@russ-b/nestjs-common-tools/class-transformer` | reusable `class-transformer` decorators and helpers |
+| `@russ-b/nestjs-common-tools/modules` | NestJS modules such as `S3Module` |
+| `@russ-b/nestjs-common-tools/validators` | validation decorators and constraints |
+| `@russ-b/nestjs-common-tools/typeorm` | TypeORM filters, helpers, transformers, and types |
+| `@russ-b/nestjs-common-tools/logger` | logger builder and logger-related interfaces/types |
+| `@russ-b/nestjs-common-tools/common/util` | generic utility helpers |
+| `@russ-b/nestjs-common-tools/common/pagination` | pagination DTOs and helpers |
+| `@russ-b/nestjs-common-tools/common/filters` | shared filter exports |
+
 ## Class Transformer Helpers
 
-This package can also expose small reusable decorators for `class-transformer`.
+This package also exposes small reusable decorators for `class-transformer`.
 
 ### `ToStringArray`
 
@@ -37,7 +52,7 @@ It will:
 - split string values by comma
 - trim extra spaces around items
 - remove empty values
-- flatten array inputs like `['cars, bikes', 'boats']` into `['cars', 'bikes', 'boats']`
+- normalize values like `'cars, bikes, boats'` or `['cars, bikes', 'boats']` into `['cars', 'bikes', 'boats']`
 
 ### `ToOptionalBoolean`
 
@@ -94,7 +109,6 @@ import { S3Module } from '@russ-b/nestjs-common-tools/modules';
         region: config.get<string>('AWS_REGION') ?? 'eu-central-1',
         bucket: config.get<string>('S3_BUCKET'),
         endpoint: config.get<string>('S3_ENDPOINT'),
-        forcePathStyle: config.get<string>('S3_FORCE_PATH_STYLE') === 'true',
         logger: config.get<string>('S3_DEBUG') === 'true',
       }),
     }),
@@ -120,7 +134,11 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 S3_BUCKET=my-app-bucket
 ```
 
+The AWS SDK reads values from process environment, not directly from a `.env` file, so make sure your application loads those variables before creating the client.
+
 `endpoint` is optional and is mostly useful for S3-compatible providers such as MinIO or LocalStack.
+
+`forcePathStyle` defaults to `true` in this module. That is usually convenient for MinIO and LocalStack. If you want standard AWS virtual-hosted URLs, set `forcePathStyle: false`.
 
 ### Optional logging
 
@@ -239,7 +257,9 @@ A custom validator for NestJS that validates if an entity exists in the database
 
 ```typescript
 // main.ts
+import { NestFactory } from '@nestjs/core';
 import { useContainer } from 'class-validator';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -257,7 +277,6 @@ async function bootstrap() {
 ```typescript
 // app.module.ts
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { EntityConstraint } from '@russ-b/nestjs-common-tools/validators';
 
 @Module({
