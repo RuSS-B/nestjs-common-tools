@@ -1,6 +1,8 @@
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -77,7 +79,7 @@ describe('S3Service', () => {
   it('should forward explicit bucket, ACL, metadata and cache control for putObject uploads', async () => {
     const response = { ETag: '"put-etag"' };
     const send = jest.fn().mockResolvedValue(response);
-    const service = createService({ bucket: 'ignored-bucket' }, send);
+    const service = createService({ defaultBucket: 'ignored-bucket' }, send);
 
     await expect(
       service.putObject('avatar.png', 'payload', {
@@ -109,7 +111,7 @@ describe('S3Service', () => {
   it('should keep uploadObject as an alias for putObject', async () => {
     const response = { ETag: '"alias-etag"' };
     const send = jest.fn().mockResolvedValue(response);
-    const service = createService({ bucket: 'default-bucket' }, send);
+    const service = createService({ defaultBucket: 'default-bucket' }, send);
 
     await expect(
       service.uploadObject('avatar.png', 'payload', {
@@ -131,7 +133,7 @@ describe('S3Service', () => {
   it('should use the resolved bucket for deletions', async () => {
     const response = { DeleteMarker: true };
     const send = jest.fn().mockResolvedValue(response);
-    const service = createService({ bucket: 'default-bucket' }, send);
+    const service = createService({ defaultBucket: 'default-bucket' }, send);
 
     await expect(
       service.deleteObject('avatar.png', { bucket: 'archive-bucket' }),
@@ -142,6 +144,55 @@ describe('S3Service', () => {
     expect(send.mock.calls[0][0].input).toEqual({
       Bucket: 'archive-bucket',
       Key: 'avatar.png',
+    });
+  });
+
+  it('should copy an object with the configured default bucket', async () => {
+    const response = { CopyObjectResult: { ETag: '"copy-etag"' } };
+    const send = jest.fn().mockResolvedValue(response);
+    const service = createService({ defaultBucket: 'default-bucket' }, send);
+
+    await expect(
+      service.copyObject('source/avatar old.png', 'target/avatar new.png'),
+    ).resolves.toBe(response);
+
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0]).toBeInstanceOf(CopyObjectCommand);
+    expect(send.mock.calls[0][0].input).toEqual({
+      Bucket: 'default-bucket',
+      CopySource: 'default-bucket/source/avatar%20old.png',
+      Key: 'target/avatar new.png',
+    });
+  });
+
+  it('should support explicit source and destination buckets for copyObject', async () => {
+    const response = { CopyObjectResult: { ETag: '"copy-etag"' } };
+    const send = jest.fn().mockResolvedValue(response);
+    const service = createService({ defaultBucket: 'default-bucket' }, send);
+
+    await expect(
+      service.copyObject('source/avatar.png', 'target/avatar.png', {
+        bucket: 'target-bucket',
+        sourceBucket: 'source-bucket',
+        contentType: 'image/png',
+        cacheControl: 'public, max-age=3600',
+        metadata: {
+          source: 'unit-test',
+        },
+      }),
+    ).resolves.toBe(response);
+
+    expect(send.mock.calls[0][0]).toBeInstanceOf(CopyObjectCommand);
+    expect(send.mock.calls[0][0].input).toEqual({
+      Bucket: 'target-bucket',
+      CopySource: 'source-bucket/source/avatar.png',
+      Key: 'target/avatar.png',
+      ContentType: 'image/png',
+      CacheControl: 'public, max-age=3600',
+      MetadataDirective: 'REPLACE',
+      Metadata: {
+        source: 'unit-test',
+      },
     });
   });
 
@@ -159,7 +210,7 @@ describe('S3Service', () => {
         source: 'unit-test',
       },
     });
-    const service = createService({ bucket: 'default-bucket' }, send);
+    const service = createService({ defaultBucket: 'default-bucket' }, send);
 
     await expect(service.getObject('avatar.png')).resolves.toEqual({
       body: stream,
@@ -181,12 +232,41 @@ describe('S3Service', () => {
 
   it('should fail when getObject returns no body', async () => {
     const send = jest.fn().mockResolvedValue({ Body: undefined });
-    const service = createService({ bucket: 'default-bucket' }, send);
+    const service = createService({ defaultBucket: 'default-bucket' }, send);
 
     await expect(service.getObject('avatar.png')).rejects.toThrow(
       'returned an empty body',
     );
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('should list objects with pagination-friendly options', async () => {
+    const response = {
+      Contents: [{ Key: 'avatars/one.png' }],
+      IsTruncated: true,
+      NextContinuationToken: 'next-token',
+    };
+    const send = jest.fn().mockResolvedValue(response);
+    const service = createService({ defaultBucket: 'default-bucket' }, send);
+
+    await expect(
+      service.listObjects({
+        prefix: 'avatars/',
+        maxKeys: 25,
+        continuationToken: 'current-token',
+        delimiter: '/',
+      }),
+    ).resolves.toBe(response);
+
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0]).toBeInstanceOf(ListObjectsV2Command);
+    expect(send.mock.calls[0][0].input).toEqual({
+      Bucket: 'default-bucket',
+      Prefix: 'avatars/',
+      MaxKeys: 25,
+      ContinuationToken: 'current-token',
+      Delimiter: '/',
+    });
   });
 
   it('should generate a signed getObject URL by default', async () => {
@@ -242,7 +322,7 @@ describe('S3Service', () => {
     const send = jest.fn().mockResolvedValue({ ETag: '"put-etag"' });
     const service = createService(
       {
-        bucket: 'default-bucket',
+        defaultBucket: 'default-bucket',
         logger: true,
       },
       send,
@@ -261,7 +341,7 @@ describe('S3Service', () => {
     };
     const service = createService(
       {
-        bucket: 'default-bucket',
+        defaultBucket: 'default-bucket',
         logger,
       },
       send,
@@ -276,10 +356,24 @@ describe('S3Service', () => {
       'Failed to upload object: avatar.png',
     );
   });
+
+  it('should still support the deprecated module bucket option as a fallback', async () => {
+    const response = { ETag: '"legacy-etag"' };
+    const send = jest.fn().mockResolvedValue(response);
+    const service = createService({ bucket: 'legacy-bucket' }, send);
+
+    await service.putObject('avatar.png', 'payload');
+
+    expect(send.mock.calls[0][0]).toBeInstanceOf(PutObjectCommand);
+    expect(send.mock.calls[0][0].input).toMatchObject({
+      Bucket: 'legacy-bucket',
+      Key: 'avatar.png',
+    });
+  });
 });
 
 function createService(
-  options: S3ModuleOptions = { bucket: 'default-bucket' },
+  options: S3ModuleOptions = { defaultBucket: 'default-bucket' },
   send = jest.fn(),
 ): S3Service {
   return new S3Service(

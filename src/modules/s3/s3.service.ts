@@ -1,7 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  CopyObjectCommand,
+  CopyObjectCommandInput,
   DeleteObjectCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   PutObjectCommandInput,
   S3Client,
@@ -12,8 +15,12 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { S3_CLIENT, S3_MODULE_OPTIONS } from './s3.constants';
 import {
   S3Body,
+  S3CopyObjectOptions,
+  S3CopyObjectResult,
   S3DeleteObjectResult,
   S3GetObjectResult,
+  S3ListObjectsOptions,
+  S3ListObjectsResult,
   S3ModuleLogger,
   S3ModuleOptions,
   S3ObjectOptions,
@@ -99,6 +106,29 @@ export class S3Service {
     }
   }
 
+  async copyObject(
+    sourceKey: string,
+    destinationKey: string,
+    options?: S3CopyObjectOptions,
+  ): Promise<S3CopyObjectResult> {
+    const command = new CopyObjectCommand(
+      this.createCopyObjectParams(sourceKey, destinationKey, options),
+    );
+
+    try {
+      const response = await this.s3Client.send(command);
+      this.log(`Copied object: ${sourceKey} -> ${destinationKey}`);
+
+      return response;
+    } catch (error) {
+      this.logError(
+        `Failed to copy object: ${sourceKey} -> ${destinationKey}`,
+        error,
+      );
+      throw error;
+    }
+  }
+
   async getObject(
     key: string,
     options?: S3ObjectOptions,
@@ -137,6 +167,33 @@ export class S3Service {
     }
   }
 
+  async listObjects(
+    options?: S3ListObjectsOptions,
+  ): Promise<S3ListObjectsResult> {
+    const command = new ListObjectsV2Command({
+      Bucket: this.resolveBucket(options?.bucket),
+      ...(options?.continuationToken
+        ? { ContinuationToken: options.continuationToken }
+        : {}),
+      ...(options?.delimiter ? { Delimiter: options.delimiter } : {}),
+      ...(options?.maxKeys ? { MaxKeys: options.maxKeys } : {}),
+      ...(options?.prefix ? { Prefix: options.prefix } : {}),
+    });
+
+    try {
+      const response = await this.s3Client.send(command);
+      this.log(`Listed objects for bucket: ${command.input.Bucket}`);
+
+      return response;
+    } catch (error) {
+      this.logError(
+        `Failed to list objects for bucket: ${command.input.Bucket}`,
+        error,
+      );
+      throw error;
+    }
+  }
+
   async getSignedUrl(
     key: string,
     options?: S3SignedUrlOptions,
@@ -153,6 +210,33 @@ export class S3Service {
           });
 
     return presignS3Request(this.s3Client, command, { expiresIn });
+  }
+
+  private createCopyObjectParams(
+    sourceKey: string,
+    destinationKey: string,
+    options?: S3CopyObjectOptions,
+  ): CopyObjectCommandInput {
+    const destinationBucket = this.resolveBucket(options?.bucket);
+    const sourceBucket = this.resolveBucket(options?.sourceBucket ?? options?.bucket);
+    const shouldReplaceMetadata = !!(
+      options?.cacheControl ||
+      options?.contentType ||
+      options?.metadata
+    );
+    const metadataDirective =
+      options?.metadataDirective ?? (shouldReplaceMetadata ? 'REPLACE' : undefined);
+
+    return {
+      Bucket: destinationBucket,
+      CopySource: this.buildCopySource(sourceBucket, sourceKey),
+      Key: destinationKey,
+      ...(options?.acl ? { ACL: options.acl } : {}),
+      ...(options?.cacheControl ? { CacheControl: options.cacheControl } : {}),
+      ...(options?.contentType ? { ContentType: options.contentType } : {}),
+      ...(metadataDirective ? { MetadataDirective: metadataDirective } : {}),
+      ...(options?.metadata ? { Metadata: options.metadata } : {}),
+    };
   }
 
   private createPutObjectParams(
@@ -176,12 +260,20 @@ export class S3Service {
     };
   }
 
+  private buildCopySource(bucket: string, key: string): string {
+    return `${encodeURIComponent(bucket)}/${key
+      .split('/')
+      .map((part) => encodeURIComponent(part))
+      .join('/')}`;
+  }
+
   private resolveBucket(bucket?: string): string {
-    const resolvedBucket = bucket ?? this.options.bucket;
+    const resolvedBucket =
+      bucket ?? this.options.defaultBucket ?? this.options.bucket;
 
     if (!resolvedBucket) {
       throw new Error(
-        'S3 bucket is not configured. Pass a bucket to the method call or set S3ModuleOptions.bucket.',
+        'S3 bucket is not configured. Pass a bucket to the method call or set S3ModuleOptions.defaultBucket.',
       );
     }
 

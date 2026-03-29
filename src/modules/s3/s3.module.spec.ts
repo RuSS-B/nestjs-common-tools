@@ -14,7 +14,7 @@ describe('S3Module', () => {
       global: true,
       inject: ['CONFIG'],
       useFactory: () => ({
-        bucket: 'default-bucket',
+        defaultBucket: 'default-bucket',
       }),
     });
 
@@ -47,13 +47,13 @@ describe('S3Module', () => {
     const dynamicModule = S3Module.forRootAsync({
       useFactory: () => ({
         endpoint: 'http://localhost:9000',
-        bucket: 'default-bucket',
+        defaultBucket: 'default-bucket',
       }),
     });
 
     const client = getClientProvider(dynamicModule).useFactory({
       endpoint: 'http://localhost:9000',
-      bucket: 'default-bucket',
+      defaultBucket: 'default-bucket',
     });
 
     expect(client).toBeInstanceOf(S3Client);

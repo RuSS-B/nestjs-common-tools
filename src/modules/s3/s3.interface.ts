@@ -1,7 +1,11 @@
 import type { LoggerService, ModuleMetadata } from '@nestjs/common';
 import type {
+  CopyObjectCommandInput,
+  CopyObjectCommandOutput,
   DeleteObjectCommandOutput,
   GetObjectCommandOutput,
+  ListObjectsV2CommandInput,
+  ListObjectsV2CommandOutput,
   ObjectCannedACL,
   PutObjectCommandInput,
   PutObjectCommandOutput,
@@ -15,6 +19,10 @@ export interface S3ModuleOptions {
   region?: string;
   endpoint?: string;
   forcePathStyle?: boolean;
+  defaultBucket?: string;
+  /**
+   * @deprecated Use defaultBucket instead.
+   */
   bucket?: string;
   logger?: boolean | S3ModuleLogger;
 }
@@ -41,6 +49,18 @@ export interface S3SignedUrlOptions extends S3UploadOptions {
   operation?: 'getObject' | 'putObject';
 }
 
+export interface S3CopyObjectOptions extends S3UploadOptions {
+  metadataDirective?: CopyObjectCommandInput['MetadataDirective'];
+  sourceBucket?: string;
+}
+
+export interface S3ListObjectsOptions extends S3ObjectOptions {
+  continuationToken?: ListObjectsV2CommandInput['ContinuationToken'];
+  delimiter?: ListObjectsV2CommandInput['Delimiter'];
+  maxKeys?: ListObjectsV2CommandInput['MaxKeys'];
+  prefix?: ListObjectsV2CommandInput['Prefix'];
+}
+
 export interface S3GetObjectResult {
   body: Readable;
   cacheControl?: GetObjectCommandOutput['CacheControl'];
@@ -54,5 +74,7 @@ export interface S3GetObjectResult {
 export type S3UploadResult = CompleteMultipartUploadCommandOutput;
 export type S3PutObjectResult = PutObjectCommandOutput;
 export type S3DeleteObjectResult = DeleteObjectCommandOutput;
+export type S3CopyObjectResult = CopyObjectCommandOutput;
+export type S3ListObjectsResult = ListObjectsV2CommandOutput;
 export type S3Body = NonNullable<PutObjectCommandInput['Body']>;
 export type UploadParams = S3UploadOptions;

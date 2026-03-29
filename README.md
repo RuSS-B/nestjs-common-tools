@@ -107,7 +107,7 @@ import { S3Module } from '@russ-b/nestjs-common-tools/modules';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         region: config.get<string>('AWS_REGION') ?? 'eu-central-1',
-        bucket: config.get<string>('S3_BUCKET'),
+        defaultBucket: config.get<string>('S3_BUCKET'),
         endpoint: config.get<string>('S3_ENDPOINT'),
         logger: config.get<string>('S3_DEBUG') === 'true',
       }),
@@ -140,6 +140,8 @@ The AWS SDK reads values from process environment, not directly from a `.env` fi
 
 `forcePathStyle` defaults to `true` in this module. That is usually convenient for MinIO and LocalStack. If you want standard AWS virtual-hosted URLs, set `forcePathStyle: false`.
 
+`defaultBucket` is the module-level fallback bucket. You can still override it per method call with `options.bucket`.
+
 ### Optional logging
 
 By default, the module stays silent and does not write S3 operation logs.
@@ -149,7 +151,7 @@ If you want extra visibility while testing connectivity with S3 or MinIO, set `l
 ```typescript
 S3Module.forRootAsync({
   useFactory: () => ({
-    bucket: 'my-app-bucket',
+    defaultBucket: 'my-app-bucket',
     endpoint: 'http://localhost:9000',
     forcePathStyle: true,
     logger: true,
@@ -204,6 +206,17 @@ export class FilesService {
   async deleteAvatar(key: string) {
     return this.s3Service.deleteObject(key);
   }
+
+  async duplicateAvatar(sourceKey: string, destinationKey: string) {
+    return this.s3Service.copyObject(sourceKey, destinationKey);
+  }
+
+  async listAvatars() {
+    return this.s3Service.listObjects({
+      prefix: 'avatars/',
+      maxKeys: 50,
+    });
+  }
 }
 ```
 
@@ -243,9 +256,52 @@ When generating a signed `putObject` URL, make sure the client sends the same he
 | `upload(key, body, options)` | Managed upload using `@aws-sdk/lib-storage`, useful for larger or streaming payloads |
 | `getObject(key, options)` | Returns the readable stream together with object metadata |
 | `deleteObject(key, options)` | Deletes an object from the configured bucket |
+| `copyObject(sourceKey, destinationKey, options)` | Copies an object, optionally across buckets |
+| `listObjects(options)` | Lists objects with `prefix`, `maxKeys`, `continuationToken`, and `delimiter` support |
 | `getSignedUrl(key, options)` | Creates a presigned URL for `getObject` or `putObject` |
 
 `uploadObject` is still available as a compatibility alias, but `putObject` is the preferred method name going forward.
+
+### Inject the raw S3 client
+
+If you need lower-level S3 commands that are not covered by `S3Service`, you can inject the configured AWS client directly.
+
+```typescript
+import { Inject, Injectable } from '@nestjs/common';
+import {
+  DeleteObjectsCommand,
+  HeadObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { S3_CLIENT } from '@russ-b/nestjs-common-tools/modules';
+
+@Injectable()
+export class CarPhotoService {
+  constructor(
+    @Inject(S3_CLIENT) private readonly s3Client: S3Client,
+  ) {}
+
+  async getPhotoMetadata(key: string) {
+    return this.s3Client.send(
+      new HeadObjectCommand({
+        Bucket: 'car-photos',
+        Key: key,
+      }),
+    );
+  }
+
+  async deleteMany(keys: string[]) {
+    return this.s3Client.send(
+      new DeleteObjectsCommand({
+        Bucket: 'car-photos',
+        Delete: {
+          Objects: keys.map((key) => ({ Key: key })),
+        },
+      }),
+    );
+  }
+}
+```
 
 ## Entity Validator
 
