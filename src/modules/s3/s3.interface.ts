@@ -9,6 +9,7 @@ import type {
   ObjectCannedACL,
   PutObjectCommandInput,
   PutObjectCommandOutput,
+  S3ClientConfig,
 } from '@aws-sdk/client-s3';
 import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
 import type { Readable } from 'stream';
@@ -19,6 +20,8 @@ export interface S3ModuleOptions {
   region?: string;
   endpoint?: string;
   forcePathStyle?: boolean;
+  requestChecksumCalculation?: S3ClientConfig['requestChecksumCalculation'];
+  responseChecksumValidation?: S3ClientConfig['responseChecksumValidation'];
   defaultBucket?: string;
   /**
    * @deprecated Use defaultBucket instead.

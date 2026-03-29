@@ -25,6 +25,8 @@ export class S3Module {
               region: opts.region || 'us-east-1',
               endpoint: opts.endpoint,
               forcePathStyle: opts.forcePathStyle ?? true,
+              requestChecksumCalculation: opts.requestChecksumCalculation,
+              responseChecksumValidation: opts.responseChecksumValidation,
             };
 
             return new S3Client(clientConfig);
