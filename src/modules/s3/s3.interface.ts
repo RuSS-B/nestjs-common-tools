@@ -50,6 +50,7 @@ export interface S3UploadOptions extends S3ObjectOptions {
 export interface S3SignedUrlOptions extends S3UploadOptions {
   expiresIn?: number;
   operation?: 'getObject' | 'putObject';
+  endpoint?: string;
 }
 
 export interface S3CopyObjectOptions extends S3UploadOptions {

@@ -318,6 +318,36 @@ describe('S3Service', () => {
     expect(presignMock.mock.calls[0][2]).toEqual({ expiresIn: 60 });
   });
 
+  it('should generate a signed URL using an override endpoint', async () => {
+    const service = createService({
+      defaultBucket: 'default-bucket',
+      endpoint: 'http://127.0.0.1:9000',
+      region: 'us-east-1',
+      forcePathStyle: true,
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
+    });
+    presignMock.mockResolvedValue('https://signed.example.com/download');
+
+    await expect(
+      service.getSignedUrl('avatar.png', {
+        endpoint: 'http://minio:9000',
+      }),
+    ).resolves.toBe('https://signed.example.com/download');
+
+    expect(presignMock).toHaveBeenCalledTimes(1);
+    expect(presignMock.mock.calls[0][0]).toBeInstanceOf(S3Client);
+    expect(presignMock.mock.calls[0][0]).not.toBe((service as any).s3Client);
+    expect(await presignMock.mock.calls[0][0].config.region()).toBe('us-east-1');
+    await expect(presignMock.mock.calls[0][0].config.endpoint()).resolves.toMatchObject({
+      hostname: 'minio',
+      port: 9000,
+      protocol: 'http:',
+    });
+    expect(presignMock.mock.calls[0][0].config.forcePathStyle).toBe(true);
+    expect(presignMock.mock.calls[0][1]).toBeInstanceOf(GetObjectCommand);
+  });
+
   it('should log operations when logger is enabled', async () => {
     const send = jest.fn().mockResolvedValue({ ETag: '"put-etag"' });
     const service = createService(

@@ -200,6 +200,7 @@ export class S3Service {
   ): Promise<string> {
     const expiresIn = options?.expiresIn ?? 900;
     const operation = options?.operation ?? 'getObject';
+    const s3Client = this.resolveSigningClient(options?.endpoint);
 
     const command =
       operation === 'putObject'
@@ -209,7 +210,7 @@ export class S3Service {
             Key: key,
           });
 
-    return presignS3Request(this.s3Client, command, { expiresIn });
+    return presignS3Request(s3Client, command, { expiresIn });
   }
 
   private createCopyObjectParams(
@@ -278,6 +279,27 @@ export class S3Service {
     }
 
     return resolvedBucket;
+  }
+
+  private resolveSigningClient(endpoint?: string): S3Client {
+    if (!endpoint || endpoint === this.options.endpoint) {
+      return this.s3Client;
+    }
+
+    const clientConfig = (this.s3Client as {
+      config?: {
+        credentials?: S3Client['config']['credentials'];
+      };
+    }).config;
+
+    return new S3Client({
+      region: this.options.region ?? 'us-east-1',
+      endpoint,
+      forcePathStyle: this.options.forcePathStyle ?? true,
+      requestChecksumCalculation: this.options.requestChecksumCalculation,
+      responseChecksumValidation: this.options.responseChecksumValidation,
+      ...(clientConfig?.credentials ? { credentials: clientConfig.credentials } : {}),
+    });
   }
 
   private log(message: string): void {
