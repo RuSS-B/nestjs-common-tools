@@ -1,6 +1,6 @@
 {
   "name": "@russ-b/nestjs-common-tools",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "NestJS utility tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
