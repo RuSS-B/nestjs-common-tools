@@ -26,9 +26,147 @@ This package uses subpath exports for most features.
 | `@russ-b/nestjs-common-tools/validators` | validation decorators and constraints |
 | `@russ-b/nestjs-common-tools/typeorm` | TypeORM filters, helpers, transformers, and types |
 | `@russ-b/nestjs-common-tools/logger` | logger builder and logger-related interfaces/types |
+| `@russ-b/nestjs-common-tools/pagination` | pagination DTOs, response builders, and errors |
 | `@russ-b/nestjs-common-tools/common/util` | generic utility helpers |
-| `@russ-b/nestjs-common-tools/common/pagination` | pagination DTOs and helpers |
+| `@russ-b/nestjs-common-tools/common/pagination` | legacy compatibility alias for `pagination` |
 | `@russ-b/nestjs-common-tools/common/filters` | shared filter exports |
+
+## Pagination
+
+Import pagination helpers from `@russ-b/nestjs-common-tools/pagination`.
+
+The pagination module includes:
+
+- request DTOs for `page` and `perPage`
+- a sortable request DTO with `sortOrder`
+- response builders for the standard and legacy response shapes
+- a transport-agnostic out-of-range error
+- Swagger schema helpers
+
+### Request DTOs
+
+`PaginatedRequestDto` gives you validated pagination query params with sensible defaults:
+
+- `page` defaults to `1`
+- `perPage` defaults to `50`
+- `perPage` is limited to `1000`
+- string query values such as `?page=2&perPage=25` are coerced to numbers
+
+```typescript
+import { Controller, Get, Query } from '@nestjs/common';
+import { PaginatedRequestDto } from '@russ-b/nestjs-common-tools/pagination';
+
+@Controller('users')
+export class UsersController {
+  @Get()
+  findAll(@Query() query: PaginatedRequestDto) {
+    return {
+      page: query.page,
+      perPage: query.perPage,
+      offset: query.offset,
+      params: query.getParams(),
+    };
+  }
+}
+```
+
+If you also want a sort direction, use `SortablePaginatedRequestDto`:
+
+```typescript
+import { SortablePaginatedRequestDto } from '@russ-b/nestjs-common-tools/pagination';
+
+export class UserListQueryDto extends SortablePaginatedRequestDto {}
+```
+
+`sortOrder` accepts `asc` or `desc`.
+
+### Building Responses
+
+Use `Pagination.createResponse(...)` for the standard contract with `total` and `pages`.
+
+```typescript
+import { Pagination, PaginatedRequestDto } from '@russ-b/nestjs-common-tools/pagination';
+
+async findAll(query: PaginatedRequestDto) {
+  const [users, total] = await this.userRepository.findAndCount({
+    skip: query.offset,
+    take: query.perPage,
+  });
+
+  return Pagination.createResponse(query, [users, total]);
+}
+```
+
+This returns:
+
+```typescript
+{
+  data: users,
+  pagination: {
+    total: 125,
+    pages: 13,
+    page: 1,
+    perPage: 10,
+  },
+}
+```
+
+If you still need the old contract with `totalItems` and `totalPages`, use `Pagination.createLegacyResponse(...)`.
+
+### Out-Of-Range Errors
+
+`Pagination.createResponse(...)` and `Pagination.createLegacyResponse(...)` throw a transport-agnostic pagination error when the requested page is out of range.
+
+```typescript
+import {
+  PAGINATION_OUT_OF_RANGE,
+  Pagination,
+  PaginationOutOfRangeError,
+} from '@russ-b/nestjs-common-tools/pagination';
+
+try {
+  return Pagination.createResponse(query, [users, total]);
+} catch (error) {
+  if (
+    error instanceof PaginationOutOfRangeError &&
+    error.code === PAGINATION_OUT_OF_RANGE
+  ) {
+    // map to the transport or framework you use
+  }
+
+  throw error;
+}
+```
+
+## Pagination And Swagger
+
+Generic DTOs such as `PaginationResponseDto<T>` are useful at runtime, but Swagger usually does not infer the concrete `T` item type automatically.
+
+For Swagger/OpenAPI responses, this package exposes explicit schema helpers from `@russ-b/nestjs-common-tools/pagination`.
+
+```typescript
+import { ApiExtraModels, ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
+import {
+  createPaginatedResponseSchema,
+  PaginationResponseDto,
+} from '@russ-b/nestjs-common-tools/pagination';
+
+@ApiExtraModels(UserDto, PaginationResponseDto)
+@ApiOkResponse({
+  schema: createPaginatedResponseSchema({
+    $ref: getSchemaPath(UserDto),
+  }),
+})
+findAll() {
+  // ...
+}
+```
+
+If you still return the legacy pagination shape, use `createLegacyPaginatedResponseSchema(...)` instead.
+
+`PaginationResponseDto` is the standard response DTO with `total` and `pages`.
+`LegacyPaginatedResponseDto` preserves the old `totalItems` and `totalPages` shape.
+The older `PaginatedResponseDto` name remains only as a deprecated legacy alias.
 
 ## Class Transformer Helpers
 

@@ -1,21 +1,11 @@
-export interface IPaginationRequestParams {
+export interface PaginationRequest {
   page: number;
   perPage: number;
 }
 
-export interface IPaginationParams {
+export interface PaginationParams {
   perPage: number;
   offset: number;
-}
-
-export interface IPaginatedResponse<T> {
-  data: T[];
-  pagination: IPaginationData;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: PaginationMeta;
 }
 
 export interface PaginationMeta {
@@ -25,11 +15,21 @@ export interface PaginationMeta {
   perPage: number;
 }
 
-export interface IPaginationData {
+export interface LegacyPaginationMeta {
   totalItems: number;
   totalPages: number;
   page: number;
   perPage: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
+export interface LegacyPaginatedResponse<T> {
+  data: T[];
+  pagination: LegacyPaginationMeta;
 }
 
 export type CountableResponse<T> = [T[], number];

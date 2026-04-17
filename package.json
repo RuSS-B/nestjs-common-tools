@@ -35,6 +35,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./pagination": {
+      "types": "./dist/pagination/index.d.ts",
+      "default": "./dist/pagination/index.js"
+    },
     "./common/util": {
       "types": "./dist/common/util/index.d.ts",
       "default": "./dist/common/util/index.js"
@@ -71,6 +75,9 @@
   },
   "typesVersions": {
     "*": {
+      "pagination": [
+        "dist/pagination/index.d.ts"
+      ],
       "validators": [
         "dist/validators/index.d.ts"
       ],
@@ -137,6 +144,9 @@
       "ts"
     ],
     "rootDir": "src",
+    "setupFiles": [
+      "<rootDir>/jest.setup.ts"
+    ],
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

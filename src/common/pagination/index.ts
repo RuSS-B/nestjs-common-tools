@@ -1,5 +1,4 @@
-export * from './pagination';
-export * from './dto/paginated-request.dto';
-export * from './dto/paginated-response.dto';
-export * from './interfaces/pagination.interface';
-export * from './exceptions';
+/**
+ * @deprecated Use @russ-b/nestjs-common-tools/pagination instead.
+ */
+export * from '../../pagination';
