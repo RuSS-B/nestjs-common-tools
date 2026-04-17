@@ -28,7 +28,6 @@ This package uses subpath exports for most features.
 | `@russ-b/nestjs-common-tools/logger` | logger builder and logger-related interfaces/types |
 | `@russ-b/nestjs-common-tools/pagination` | pagination DTOs, response builders, and errors |
 | `@russ-b/nestjs-common-tools/common/util` | generic utility helpers |
-| `@russ-b/nestjs-common-tools/common/pagination` | legacy compatibility alias for `pagination` |
 | `@russ-b/nestjs-common-tools/common/filters` | shared filter exports |
 
 ## Pagination

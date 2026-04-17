@@ -44,10 +44,6 @@
       "types": "./dist/common/util/index.d.ts",
       "default": "./dist/common/util/index.js"
     },
-    "./common/pagination": {
-      "types": "./dist/common/pagination/index.d.ts",
-      "default": "./dist/common/pagination/index.js"
-    },
     "./common/filters": {
       "types": "./dist/common/filters/index.d.ts",
       "default": "./dist/common/filters/index.js"
@@ -87,9 +83,6 @@
       ],
       "common/util": [
         "dist/common/util/index.d.ts"
-      ],
-      "common/pagination": [
-        "dist/common/pagination/index.d.ts"
       ],
       "common/filters": [
         "dist/common/filters/index.d.ts"

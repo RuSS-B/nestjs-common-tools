@@ -1,6 +1,4 @@
 import { BadRequestException } from '@nestjs/common';
-import * as legacyPaginationExports from '../common/pagination';
-import * as paginationExports from './index';
 import {
   OutOfRangeException,
   PAGINATION_OUT_OF_RANGE,
@@ -91,18 +89,5 @@ describe('Pagination', () => {
       offset: 10,
       perPage: 5,
     });
-  });
-
-  it('should keep common/pagination as a compatibility export', () => {
-    expect(legacyPaginationExports.Pagination).toBe(paginationExports.Pagination);
-    expect(legacyPaginationExports.PaginationResponseDto).toBe(
-      paginationExports.PaginationResponseDto,
-    );
-    expect(legacyPaginationExports.PaginatedResponseDto).toBe(
-      paginationExports.PaginatedResponseDto,
-    );
-    expect(legacyPaginationExports.OutOfRangeException).toBe(
-      paginationExports.OutOfRangeException,
-    );
   });
 });
