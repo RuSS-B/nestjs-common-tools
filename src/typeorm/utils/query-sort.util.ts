@@ -1,5 +1,5 @@
 import { ObjectLiteral, SelectQueryBuilder } from 'typeorm';
-import { SortOrder } from '../dto';
+import { SortOrder } from '../enums';
 
 export type QueryOrderNulls = 'NULLS FIRST' | 'NULLS LAST';
 
@@ -15,7 +15,10 @@ export interface QueryOrderByConfig extends QuerySortConfig {
 
 export type QuerySortMap<TSort extends string> = Record<TSort, QuerySortConfig>;
 
-export function applyQuerySorting<TEntity extends ObjectLiteral, TSort extends string>(
+export function applyQuerySorting<
+  TEntity extends ObjectLiteral,
+  TSort extends string,
+>(
   qb: SelectQueryBuilder<TEntity>,
   params: {
     sortBy?: TSort;
@@ -25,7 +28,9 @@ export function applyQuerySorting<TEntity extends ObjectLiteral, TSort extends s
     tieBreakers?: QueryOrderByConfig[];
   },
 ): void {
-  const primarySort = params.sortBy ? (params.sortMap[params.sortBy] ?? params.defaultSort) : params.defaultSort;
+  const primarySort = params.sortBy
+    ? (params.sortMap[params.sortBy] ?? params.defaultSort)
+    : params.defaultSort;
   const resolvedSortOrder = params.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
   const orderedColumns = new Set([primarySort.column]);
 

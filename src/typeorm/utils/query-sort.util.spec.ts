@@ -1,6 +1,13 @@
-import { createListQueryBuilderMock } from '../../../test/helpers/query-builder.mock';
-import { SortOrder } from '../dto';
+import { SortOrder } from '../enums';
 import { applyQuerySorting } from './query-sort.util';
+
+function createListQueryBuilderMock() {
+  return {
+    orderBy: jest.fn(),
+    addOrderBy: jest.fn(),
+    addSelect: jest.fn(),
+  };
+}
 
 describe('applyQuerySorting', () => {
   it('applies default sorting with tie breakers', () => {
@@ -59,7 +66,12 @@ describe('applyQuerySorting', () => {
     });
 
     expect(qb.orderBy).toHaveBeenCalledWith('c.name', 'ASC', undefined);
-    expect(qb.addOrderBy).toHaveBeenNthCalledWith(1, 'c.createdAt', 'DESC', undefined);
+    expect(qb.addOrderBy).toHaveBeenNthCalledWith(
+      1,
+      'c.createdAt',
+      'DESC',
+      undefined,
+    );
     expect(qb.addOrderBy).toHaveBeenNthCalledWith(2, 'c.id', 'DESC', undefined);
   });
 
@@ -80,7 +92,14 @@ describe('applyQuerySorting', () => {
       },
     });
 
-    expect(qb.addSelect).toHaveBeenCalledWith('COALESCE(c.updated_at, c.created_at)', 'candidate_last_updated_sort');
-    expect(qb.orderBy).toHaveBeenCalledWith('candidate_last_updated_sort', 'DESC', 'NULLS LAST');
+    expect(qb.addSelect).toHaveBeenCalledWith(
+      'COALESCE(c.updated_at, c.created_at)',
+      'candidate_last_updated_sort',
+    );
+    expect(qb.orderBy).toHaveBeenCalledWith(
+      'candidate_last_updated_sort',
+      'DESC',
+      'NULLS LAST',
+    );
   });
 });
