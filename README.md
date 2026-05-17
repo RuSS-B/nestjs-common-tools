@@ -14,6 +14,14 @@ npm install @russ-b/nestjs-common-tools
 
 Depending on which features you use, make sure the relevant peer dependencies are also installed in your project.
 
+For TypeORM helpers that integrate with Nest's `TypeOrmModule`, install `@nestjs/typeorm` together with TypeORM and your database driver:
+
+```bash
+npm install @nestjs/typeorm typeorm pg
+# or, for MySQL
+npm install @nestjs/typeorm typeorm mysql2
+```
+
 ## Public entrypoints
 
 This package uses subpath exports for most features.
@@ -210,6 +218,28 @@ It will:
 - convert `'false'` to `false`
 - trim extra spaces and ignore case
 - leave unsupported values unchanged
+
+### `ToOptionalNumber`
+
+`ToOptionalNumber()` is useful for DTO fields that may arrive as strings such as `'42'`, blank strings, or already parsed numbers.
+
+```typescript
+import { ToOptionalNumber } from '@russ-b/nestjs-common-tools/class-transformer';
+
+export class SearchDto {
+  @ToOptionalNumber()
+  page?: number;
+}
+```
+
+It will:
+
+- convert numeric strings to numbers
+- trim extra spaces before parsing
+- convert empty or blank strings to `undefined`
+- keep `null` as `null`
+- keep `undefined` as `undefined`
+- return `NaN` for unsupported non-string values
 
 ## S3 Module
 
@@ -527,6 +557,63 @@ export class AssignRolesDto {
   roleIds: string[];
 }
 ```
+
+## TypeORM Options Factories
+
+`createTypeOrmOptions` creates Nest `TypeOrmModuleOptions` using driver-specific defaults. It currently supports PostgreSQL and MySQL.
+
+```typescript
+// app.module.ts
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { createTypeOrmOptions } from '@russ-b/nestjs-common-tools/typeorm';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        createTypeOrmOptions({
+          type: 'postgres',
+          appName: 'parking-api',
+          databaseUrl: config.getOrThrow<string>('DATABASE_URL'),
+          schema: config.get<string>('DATABASE_SCHEMA'),
+          sync: config.get<string>('TYPEORM_SYNC'),
+          logging: config.get<string>('TYPEORM_LOGGING'),
+          isProduction: config.get<string>('NODE_ENV') === 'production',
+        }),
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+PostgreSQL support is also exposed directly as `createPostgresTypeormOptions`. Its `schema` option is applied both as TypeORM's schema and as `search_path`, and pool options are passed through the `pg` driver via TypeORM's `extra` config.
+
+For MySQL, use `type: 'mysql'` or call `createMysqlTypeormOptions` directly:
+
+```typescript
+TypeOrmModule.forRootAsync({
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: (config: ConfigService) =>
+    createTypeOrmOptions({
+      type: 'mysql',
+      databaseUrl: config.getOrThrow<string>('DATABASE_URL'),
+      sync: config.get<string>('TYPEORM_SYNC'),
+      logging: config.get<string>('TYPEORM_LOGGING'),
+      isProduction: config.get<string>('NODE_ENV') === 'production',
+      connectorPackage: 'mysql2',
+    }),
+});
+```
+
+The MySQL factory uses TypeORM's `poolSize`, `connectTimeout`, and `acquireTimeout` options instead of PostgreSQL-only `search_path`, `application_name`, or `query_timeout` settings.
 
 ## TypeORM Exception Filter
 
