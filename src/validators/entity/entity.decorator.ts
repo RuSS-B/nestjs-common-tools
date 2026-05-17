@@ -3,6 +3,11 @@ import { EntityValidationOptions } from './entity.interface';
 import { IS_ENTITY } from './entity.constant';
 import { EntityConstraint } from './entity.constraint';
 
+/**
+ * @deprecated Entity existence checks are not the responsibility of DTO
+ * validation. This validator leaks persistence/service concerns into DTOs; keep
+ * that logic in the service/application layer instead.
+ */
 export function IsEntity(
   entityType: Function,
   options?: EntityValidationOptions & ValidationOptions,

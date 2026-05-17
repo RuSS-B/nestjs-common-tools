@@ -513,6 +513,9 @@ export class AppModule {}
 
 ## Usage
 
+> Deprecated: `IsEntity` couples DTO validation to persistence/service concerns.
+> Keep entity existence checks in the service/application layer instead.
+
 ```typescript
 import { IsEntity } from '@russ-b/nestjs-common-tools/validators';
 
