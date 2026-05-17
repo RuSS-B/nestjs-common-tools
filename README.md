@@ -598,6 +598,32 @@ export class AppModule {}
 
 PostgreSQL support is also exposed directly as `createPostgresTypeormOptions`. Its `schema` option is applied both as TypeORM's schema and as `search_path`, and pool options are passed through the `pg` driver via TypeORM's `extra` config.
 
+For managed PostgreSQL providers that require SSL with a CA certificate, you can pass atomic connection fields and `sslCa`. This avoids `pg` overwriting the explicit `ssl` object when `sslmode` or `sslrootcert` exists in the connection string.
+
+```typescript
+TypeOrmModule.forRootAsync({
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: (config: ConfigService) =>
+    createTypeOrmOptions({
+      type: 'postgres',
+      database: {
+        host: config.getOrThrow<string>('DB_HOST'),
+        port: config.get<number>('DB_PORT'),
+        username: config.getOrThrow<string>('DB_USER'),
+        password: config.getOrThrow<string>('DB_PASSWORD'),
+        database: config.getOrThrow<string>('DB_NAME'),
+      },
+      sslCa: config.get<string>('DB_CA_CERT'),
+      sync: config.get<string>('TYPEORM_SYNC'),
+      logging: config.get<string>('TYPEORM_LOGGING'),
+      isProduction: config.get<string>('NODE_ENV') === 'production',
+    }),
+});
+```
+
+When `sslCa` is used together with `databaseUrl`, SSL-related query params such as `sslmode` and `sslrootcert` are removed from the URL before TypeORM passes the config to `pg`.
+
 For MySQL, use `type: 'mysql'` or call `createMysqlTypeormOptions` directly:
 
 ```typescript

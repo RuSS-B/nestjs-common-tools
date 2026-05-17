@@ -4,7 +4,6 @@ import { createPostgresTypeormOptions } from './postgres-typeorm-options.factory
 describe('createPostgresTypeormOptions', () => {
   it('creates PostgreSQL TypeORM options with safe defaults', () => {
     const options = createPostgresTypeormOptions({
-      appName: 'parking-api',
       databaseUrl: 'postgres://user:p@ss@localhost:5432/app',
       isProduction: false,
     });
@@ -25,10 +24,76 @@ describe('createPostgresTypeormOptions', () => {
         connectionTimeoutMillis: 5000,
         maxUses: 10000,
         keepAlive: true,
-        application_name: 'parking-api',
         query_timeout: 30000,
       },
     });
+  });
+
+  it('sets PostgreSQL application name only when appName is provided', () => {
+    expect(
+      createPostgresTypeormOptions({
+        appName: 'parking-api',
+        databaseUrl: 'postgres://localhost/app',
+        isProduction: false,
+      }).extra,
+    ).toMatchObject({
+      application_name: 'parking-api',
+    });
+
+    expect(
+      createPostgresTypeormOptions({
+        databaseUrl: 'postgres://localhost/app',
+        isProduction: false,
+      }).extra,
+    ).not.toHaveProperty('application_name');
+  });
+
+  it('uses atomic PostgreSQL connection options when database is provided', () => {
+    const options = createPostgresTypeormOptions({
+      databaseUrl: 'postgres://ignored:ignored@ignored:5432/ignored',
+      database: {
+        host: 'db.example.com',
+        port: 25060,
+        username: 'doadmin',
+        password: 'secret',
+        database: 'defaultdb',
+      },
+      isProduction: false,
+    });
+
+    expect(options).toMatchObject({
+      host: 'db.example.com',
+      port: 25060,
+      username: 'doadmin',
+      password: 'secret',
+      database: 'defaultdb',
+    });
+    expect(options).not.toHaveProperty('url');
+  });
+
+  it('adds SSL CA options and removes connection string SSL params', () => {
+    const options = createPostgresTypeormOptions({
+      databaseUrl:
+        'postgres://user:password@db.example.com:25060/defaultdb?sslmode=verify-full&sslrootcert=/path/to/ca.crt&application_name=api',
+      sslCa: '-----BEGIN CERTIFICATE-----\\ncert\\n-----END CERTIFICATE-----',
+      isProduction: false,
+    });
+
+    expect(options).toMatchObject({
+      url: 'postgres://user:password@db.example.com:25060/defaultdb?application_name=api',
+      ssl: {
+        ca: '-----BEGIN CERTIFICATE-----\ncert\n-----END CERTIFICATE-----',
+        rejectUnauthorized: true,
+      },
+    });
+  });
+
+  it('throws when neither databaseUrl nor database is provided', () => {
+    expect(() =>
+      createPostgresTypeormOptions({
+        isProduction: false,
+      }),
+    ).toThrow('databaseUrl or database connection options must be configured.');
   });
 
   it('coerces string sync and logging flags', () => {
