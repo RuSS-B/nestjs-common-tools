@@ -72,6 +72,10 @@
       "types": "./dist/logger/pino/index.d.ts",
       "default": "./dist/logger/pino/index.js"
     },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
+    },
     "./zod": {
       "types": "./dist/zod/index.d.ts",
       "default": "./dist/zod/index.js"
@@ -106,6 +110,9 @@
       ],
       "logger/pino": [
         "dist/logger/pino/index.d.ts"
+      ],
+      "errors": [
+        "dist/errors/index.d.ts"
       ],
       "zod": [
         "dist/zod/index.d.ts"

@@ -35,6 +35,7 @@ This package uses subpath exports for most features.
 | `@russ-b/nestjs-common-tools/typeorm` | TypeORM filters, helpers, transformers, and types |
 | `@russ-b/nestjs-common-tools/logger` | logger builder and logger-related interfaces/types |
 | `@russ-b/nestjs-common-tools/logger/pino` | config-first `nestjs-pino` module options helper |
+| `@russ-b/nestjs-common-tools/errors` | API error response helpers and validation exception factories |
 | `@russ-b/nestjs-common-tools/zod` | Zod exception filters for NestJS HTTP apps |
 | `@russ-b/nestjs-common-tools/pagination` | pagination DTOs, response builders, and errors |
 | `@russ-b/nestjs-common-tools/common/util` | generic utility helpers |
@@ -78,6 +79,25 @@ import { createPinoLoggerModuleOptions } from '@russ-b/nestjs-common-tools/logge
 })
 export class AppModule {}
 ```
+
+## Error Responses
+
+Import error helpers from `@russ-b/nestjs-common-tools/errors`.
+
+Use `classValidatorExceptionFactory` with Nest's `ValidationPipe` to return the shared API error response shape for `class-validator` errors:
+
+```typescript
+import { ValidationPipe } from '@nestjs/common';
+import { classValidatorExceptionFactory } from '@russ-b/nestjs-common-tools/errors';
+
+app.useGlobalPipes(
+  new ValidationPipe({
+    exceptionFactory: classValidatorExceptionFactory,
+  }),
+);
+```
+
+The shared validation response uses `ApiErrorCode.VALIDATION_FAILED`; root-level errors use `'_root'` as the field name.
 
 ## Zod Exception Filters
 

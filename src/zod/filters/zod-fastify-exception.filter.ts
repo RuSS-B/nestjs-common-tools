@@ -8,14 +8,12 @@ import type { FastifyReply } from 'fastify';
 import { ZodError } from 'zod';
 import {
   createZodValidationErrorResponse,
-  ZodValidationErrorResponseOptions,
+  ZodExceptionFilterOptions,
 } from './zod-validation-error-response';
 
 @Catch(ZodError)
 export class ZodFastifyExceptionFilter implements ExceptionFilter<ZodError> {
-  constructor(
-    private readonly options: ZodValidationErrorResponseOptions = {},
-  ) {}
+  constructor(private readonly options: ZodExceptionFilterOptions = {}) {}
 
   catch(exception: ZodError, host: ArgumentsHost): void {
     if (host.getType() !== 'http') {

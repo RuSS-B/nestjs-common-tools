@@ -1,44 +1,38 @@
 import { HttpStatus } from '@nestjs/common';
 import type { ZodError } from 'zod';
+import {
+  API_ERROR_ROOT_FIELD,
+  ApiErrorCode,
+  createApiErrorResponse,
+} from '../../errors';
+import type { ApiErrorItem, ApiErrorResponse } from '../../errors';
 
-export interface ZodValidationError {
-  field?: string;
-  message: string;
-}
-
-export interface ZodValidationErrorResponse {
-  statusCode: HttpStatus.BAD_REQUEST;
-  message: string;
-  errors: ZodValidationError[];
-}
-
-export interface ZodValidationErrorResponseOptions {
+export interface ZodExceptionFilterOptions {
   message?: string;
 }
 
-const DEFAULT_ZOD_VALIDATION_ERROR_MESSAGE = 'Validation failed';
+const DEFAULT_VALIDATION_ERROR_MESSAGE = 'Validation failed';
 
 export function createZodValidationErrorResponse(
   exception: ZodError,
-  options: ZodValidationErrorResponseOptions = {},
-): ZodValidationErrorResponse {
-  return {
+  options: ZodExceptionFilterOptions = {},
+): ApiErrorResponse {
+  return createApiErrorResponse({
     statusCode: HttpStatus.BAD_REQUEST,
-    message: options.message ?? DEFAULT_ZOD_VALIDATION_ERROR_MESSAGE,
-    errors: exception.issues.map((issue) => {
-      const field = formatZodIssuePath(issue.path);
-
-      return {
-        ...(field ? { field } : {}),
-        message: issue.message,
-      };
-    }),
-  };
+    message: options.message ?? DEFAULT_VALIDATION_ERROR_MESSAGE,
+    code: ApiErrorCode.VALIDATION_FAILED,
+    errors: exception.issues.map((issue) => ({
+      field: formatZodIssuePath(issue.path),
+      message: issue.message,
+    })),
+  });
 }
 
-function formatZodIssuePath(path: readonly PropertyKey[]): string | undefined {
+function formatZodIssuePath(
+  path: readonly PropertyKey[],
+): ApiErrorItem['field'] {
   if (path.length === 0) {
-    return undefined;
+    return API_ERROR_ROOT_FIELD;
   }
 
   return path.map(String).join('.');
