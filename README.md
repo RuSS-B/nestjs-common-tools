@@ -34,9 +34,80 @@ This package uses subpath exports for most features.
 | `@russ-b/nestjs-common-tools/validators` | validation decorators and constraints |
 | `@russ-b/nestjs-common-tools/typeorm` | TypeORM filters, helpers, transformers, and types |
 | `@russ-b/nestjs-common-tools/logger` | logger builder and logger-related interfaces/types |
+| `@russ-b/nestjs-common-tools/logger/pino` | config-first `nestjs-pino` module options helper |
+| `@russ-b/nestjs-common-tools/zod` | Zod exception filters for NestJS HTTP apps |
 | `@russ-b/nestjs-common-tools/pagination` | pagination DTOs, response builders, and errors |
 | `@russ-b/nestjs-common-tools/common/util` | generic utility helpers |
 | `@russ-b/nestjs-common-tools/common/filters` | shared filter exports |
+
+## Pino logger
+
+Import Pino helpers from `@russ-b/nestjs-common-tools/logger/pino`.
+
+Install the required peer dependencies in applications that use this entrypoint:
+
+```bash
+npm install nestjs-pino pino pino-http
+```
+
+Install `pino-pretty` as well if you enable pretty logs:
+
+```bash
+npm install pino-pretty
+```
+
+`createPinoLoggerModuleOptions` does not read from `process.env`. Pass application config explicitly, for example from `ConfigService` or your own validated config object.
+
+```typescript
+import { LoggerModule } from 'nestjs-pino';
+import { createPinoLoggerModuleOptions } from '@russ-b/nestjs-common-tools/logger/pino';
+
+@Module({
+  imports: [
+    LoggerModule.forRoot(
+      createPinoLoggerModuleOptions({
+        appName: 'billing-api',
+        level: 'info',
+        pretty: false,
+        logHttpRequests: true,
+        version: '1.2.3',
+        environment: 'production',
+      }),
+    ),
+  ],
+})
+export class AppModule {}
+```
+
+## Zod Exception Filters
+
+Import Zod filters from `@russ-b/nestjs-common-tools/zod`.
+
+Install `zod` in applications that use this entrypoint:
+
+```bash
+npm install zod
+```
+
+Use the filter that matches your NestJS HTTP adapter:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
+import { ZodExpressExceptionFilter } from '@russ-b/nestjs-common-tools/zod';
+
+@Module({
+  providers: [
+    {
+      provide: APP_FILTER,
+      useFactory: () => new ZodExpressExceptionFilter(),
+    },
+  ],
+})
+export class AppModule {}
+```
+
+For Fastify apps, use `ZodFastifyExceptionFilter` instead. Both filters return a `400` response with a `Validation failed` message and mapped Zod issue details.
 
 ## Pagination
 
