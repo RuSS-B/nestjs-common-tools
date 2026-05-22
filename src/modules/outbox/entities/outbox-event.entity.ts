@@ -30,7 +30,7 @@ export class OutboxEvent {
   retryCount: number;
 
   @Column({ name: 'last_error', type: 'text', nullable: true })
-  lastError: string;
+  lastError: string | null;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;

@@ -7,13 +7,13 @@ import {
   OutboxModuleAsyncOptions,
   OutboxModuleOptions,
   OutboxModuleRootOptions,
-} from './interfaces';
+} from './types';
 import {
   OUTBOX_EVENT_REPOSITORY,
   OUTBOX_MODULE_OPTIONS,
 } from './outbox.constants';
 import { resolveOutboxModuleOptions } from './outbox-options.util';
-import { OutboxService } from './services';
+import { OutboxCleanupWorker, OutboxService } from './services';
 
 @Module({})
 export class OutboxModule {
@@ -26,8 +26,9 @@ export class OutboxModule {
         createOutboxOptionsProvider(options),
         createOutboxRepositoryProvider(options.dataSource),
         OutboxService,
+        OutboxCleanupWorker,
       ],
-      exports: [OutboxService],
+      exports: [OutboxService, OutboxCleanupWorker],
     };
   }
 
@@ -43,8 +44,9 @@ export class OutboxModule {
         createOutboxAsyncOptionsProvider(options),
         createOutboxRepositoryProvider(options.dataSource),
         OutboxService,
+        OutboxCleanupWorker,
       ],
-      exports: [OutboxService],
+      exports: [OutboxService, OutboxCleanupWorker],
     };
   }
 }

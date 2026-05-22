@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { EntityManager, Repository } from 'typeorm';
 import { OutboxEvent } from '../entities';
 import { OutboxEventStatus } from '../enums';
-import { OutboxResolvedModuleOptions } from '../interfaces';
+import { OutboxResolvedModuleOptions } from '../types';
 import {
   OUTBOX_EVENT_REPOSITORY,
   OUTBOX_MODULE_OPTIONS,
@@ -65,6 +65,10 @@ export class OutboxService {
     eventTypes: string[],
     limit = this.options.operationalPolicy.claimBatchSize,
   ): Promise<OutboxEvent[]> {
+    if (eventTypes.length === 0) {
+      return [];
+    }
+
     return this.outboxRepository.manager.transaction(async (manager) => {
       const events = await manager
         .createQueryBuilder(OutboxEvent, 'outbox')
@@ -73,6 +77,7 @@ export class OutboxService {
         .orderBy('outbox.createdAt', 'ASC')
         .limit(limit)
         .setLock('pessimistic_write')
+        .setOnLocked('skip_locked')
         .getMany();
 
       if (events.length > 0) {
@@ -111,6 +116,7 @@ export class OutboxService {
         .orderBy('outbox.createdAt', 'ASC')
         .limit(limit)
         .setLock('pessimistic_write')
+        .setOnLocked('skip_locked')
         .getMany();
 
       // Immediately mark as PROCESSING while we hold the lock

@@ -31,6 +31,7 @@ This package uses subpath exports for most features.
 | `@russ-b/nestjs-common-tools` | root exports such as `services` |
 | `@russ-b/nestjs-common-tools/class-transformer` | reusable `class-transformer` decorators and helpers |
 | `@russ-b/nestjs-common-tools/modules` | NestJS modules such as `S3Module` |
+| `@russ-b/nestjs-common-tools/modules/outbox` | PostgreSQL TypeORM outbox module |
 | `@russ-b/nestjs-common-tools/validators` | validation decorators and constraints |
 | `@russ-b/nestjs-common-tools/typeorm` | TypeORM filters, helpers, transformers, and types |
 | `@russ-b/nestjs-common-tools/logger` | logger builder and logger-related interfaces/types |
@@ -560,6 +561,126 @@ export class CarPhotoService {
   }
 }
 ```
+
+## Outbox Module
+
+Import outbox helpers from `@russ-b/nestjs-common-tools/modules/outbox`.
+
+`OutboxModule` is a PostgreSQL TypeORM implementation of the outbox pattern. It stores events in the database, lets workers claim pending events with `FOR UPDATE SKIP LOCKED`, tracks stale processing attempts, and retries failed handlers.
+
+### Register the module
+
+```typescript
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { OutboxModule } from '@russ-b/nestjs-common-tools/modules/outbox';
+
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      // your TypeORM options
+    }),
+    OutboxModule.forRoot({
+      operationalPolicy: {
+        claimBatchSize: 100,
+        maxRetries: 5,
+        staleProcessingMinutes: 5,
+        maxConcurrentEvents: 10,
+      },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+If your app has multiple TypeORM data sources, pass the registered data source name:
+
+```typescript
+OutboxModule.forRoot({
+  dataSource: 'primary',
+});
+```
+
+### Create events
+
+Create outbox events inside the same transaction as the domain change whenever possible.
+
+```typescript
+await dataSource.transaction(async (manager) => {
+  await manager.save(order);
+
+  await outboxService.createEvent(
+    'order.created',
+    { orderId: order.id },
+    manager,
+  );
+});
+```
+
+### Process events
+
+Extend `BaseWorker` and implement event selection plus handling.
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import {
+  BaseWorker,
+  OutboxEvent,
+  OutboxService,
+} from '@russ-b/nestjs-common-tools/modules/outbox';
+
+@Injectable()
+export class OrderCreatedWorker extends BaseWorker {
+  constructor(outboxService: OutboxService) {
+    super(outboxService);
+  }
+
+  getEvents(): Promise<OutboxEvent[]> {
+    return this.outboxService.claimPendingEvents('order.created');
+  }
+
+  async handle(event: OutboxEvent): Promise<void> {
+    // Send email, publish message, call another service, etc.
+  }
+}
+```
+
+Outbox delivery is at-least-once. Handlers must be idempotent, especially when they call external services or publish messages.
+
+### Cleanup processed events
+
+`OutboxCleanupWorker` deletes processed events older than the configured `processedEventRetentionHours`. The library does not schedule it by itself, so wire it to your app scheduler. If retention should come from environment or config, pass it through `OutboxModule.forRootAsync`.
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+import { OutboxCleanupWorker } from '@russ-b/nestjs-common-tools/modules/outbox';
+
+@Injectable()
+export class OutboxCleanupCron {
+  constructor(private readonly cleanupWorker: OutboxCleanupWorker) {}
+
+  @Cron('0 0 3 * * *')
+  cleanupProcessedEvents(): Promise<number> {
+    return this.cleanupWorker.cleanupProcessedEvents();
+  }
+}
+```
+
+### Operational policy
+
+`operationalPolicy` supports:
+
+| Option                         | Default   | Description                                                    |
+| ------------------------------ | --------- | -------------------------------------------------------------- |
+| `claimBatchSize`               | `100`     | Default number of events claimed per poll                      |
+| `maxRetries`                   | `5`       | Failed events become `failed` when this retry count is reached |
+| `staleProcessingMinutes`       | `5`       | Processing events older than this are reset to pending         |
+| `resetStaleProcessingEvents`   | `true`    | Enables stale processing reset in `BaseWorker`                 |
+| `maxConcurrentEvents`          | unlimited | Limits parallel handler execution inside one worker cycle      |
+| `processedEventRetentionHours` | `24`      | Default age used by `deleteProcessed()`                        |
+
+The outbox entity uses PostgreSQL-specific column types and requires a nullable `processing_started_at` column for stale processing detection.
 
 ## Entity Validator
 

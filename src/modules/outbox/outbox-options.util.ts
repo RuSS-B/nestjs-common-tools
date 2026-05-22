@@ -2,7 +2,7 @@ import {
   OutboxModuleOptions,
   OutboxResolvedModuleOptions,
   OutboxResolvedOperationalPolicy,
-} from './interfaces';
+} from './types';
 
 export const DEFAULT_OUTBOX_OPERATIONAL_POLICY: OutboxResolvedOperationalPolicy =
   {
@@ -18,19 +18,25 @@ export function resolveOutboxModuleOptions(
 ): OutboxResolvedModuleOptions {
   const policy = options.operationalPolicy ?? {};
   const operationalPolicy: OutboxResolvedOperationalPolicy = {
-    claimBatchSize:
-      policy.claimBatchSize ?? DEFAULT_OUTBOX_OPERATIONAL_POLICY.claimBatchSize,
-    maxRetries:
-      policy.maxRetries ?? DEFAULT_OUTBOX_OPERATIONAL_POLICY.maxRetries,
-    staleProcessingMinutes:
-      policy.staleProcessingMinutes ??
+    claimBatchSize: resolvePositiveNumber(
+      policy.claimBatchSize,
+      DEFAULT_OUTBOX_OPERATIONAL_POLICY.claimBatchSize,
+    ),
+    maxRetries: resolvePositiveNumber(
+      policy.maxRetries,
+      DEFAULT_OUTBOX_OPERATIONAL_POLICY.maxRetries,
+    ),
+    staleProcessingMinutes: resolvePositiveNumber(
+      policy.staleProcessingMinutes,
       DEFAULT_OUTBOX_OPERATIONAL_POLICY.staleProcessingMinutes,
+    ),
     resetStaleProcessingEvents:
       policy.resetStaleProcessingEvents ??
       DEFAULT_OUTBOX_OPERATIONAL_POLICY.resetStaleProcessingEvents,
-    processedEventRetentionHours:
-      policy.processedEventRetentionHours ??
+    processedEventRetentionHours: resolvePositiveNumber(
+      policy.processedEventRetentionHours,
       DEFAULT_OUTBOX_OPERATIONAL_POLICY.processedEventRetentionHours,
+    ),
   };
 
   if (
@@ -43,4 +49,15 @@ export function resolveOutboxModuleOptions(
   }
 
   return { operationalPolicy };
+}
+
+function resolvePositiveNumber(
+  value: number | undefined,
+  fallback: number,
+): number {
+  if (value !== undefined && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  return fallback;
 }

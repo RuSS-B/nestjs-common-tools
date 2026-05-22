@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OutboxService } from '../services';
 import { OutboxEvent } from '../entities';
-import { OutboxResolvedOperationalPolicy } from '../interfaces';
+import { OutboxResolvedOperationalPolicy } from '../types';
 
 @Injectable()
 export abstract class BaseWorker {
