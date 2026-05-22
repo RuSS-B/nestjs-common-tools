@@ -64,6 +64,10 @@
       "types": "./dist/modules/index.d.ts",
       "default": "./dist/modules/index.js"
     },
+    "./modules/outbox": {
+      "types": "./dist/modules/outbox/index.d.ts",
+      "default": "./dist/modules/outbox/index.js"
+    },
     "./logger": {
       "types": "./dist/logger/index.d.ts",
       "default": "./dist/logger/index.js"
@@ -104,6 +108,9 @@
       ],
       "modules": [
         "dist/modules/index.d.ts"
+      ],
+      "modules/outbox": [
+        "dist/modules/outbox/index.d.ts"
       ],
       "logger": [
         "dist/logger/index.d.ts"

@@ -767,6 +767,27 @@ export class AppModule {}
 
 By default, the filter already maps common TypeORM database errors such as unique constraint violations, foreign key violations, and invalid input format to NestJS HTTP exceptions. Custom constraint handlers let you keep those responses specific to your business rules.
 
+### Entity Not Found Filter
+
+TypeORM throws `EntityNotFoundError` when methods such as `findOneOrFail` cannot find a requested entity. `EntityNotFoundFilter` maps that error to NestJS `NotFoundException` for HTTP requests and rethrows the original error for non-HTTP contexts.
+
+```typescript
+// app.module.ts
+import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
+import { EntityNotFoundFilter } from '@russ-b/nestjs-common-tools/typeorm';
+
+@Module({
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: EntityNotFoundFilter,
+    },
+  ],
+})
+export class AppModule {}
+```
+
 ## isTypeOrmQueryFailedError
 
 Sometimes a global filter is not enough and you want to react differently to one exact database error inside a service. `isTypeOrmQueryFailedError` is useful for that kind of targeted branching without scattering manual `instanceof QueryFailedError` checks and driver casts around the codebase.
