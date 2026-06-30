@@ -612,9 +612,22 @@ await dataSource.transaction(async (manager) => {
   await outboxService.createEvent(
     'order.created',
     { orderId: order.id },
-    manager,
+    { manager },
   );
 });
+```
+
+Create delayed events with `nextTryAt` when processing must not start before a known time. Pass `maxRetries` to override the global retry limit for a specific event:
+
+```typescript
+await outboxService.createEvent(
+  'order.reminder',
+  { orderId: order.id },
+  {
+    nextTryAt: new Date(Date.now() + 5_000),
+    maxRetries: 3,
+  },
+);
 ```
 
 ### Process events
@@ -647,6 +660,35 @@ export class OrderCreatedWorker extends BaseWorker {
 
 Outbox delivery is at-least-once. Handlers must be idempotent, especially when they call external services or publish messages.
 
+### Delay retries
+
+Failed events are retried immediately by default. Override `getNextTryAt()` in a worker to delay the next attempt. While `nextTryAt` is in the future, `claimById()`, `claimPendingEvents()`, and `claimPendingEventsByTypes()` skip the pending event.
+
+```typescript
+@Injectable()
+export class OrderCreatedWorker extends BaseWorker {
+  constructor(outboxService: OutboxService) {
+    super(outboxService);
+  }
+
+  getEvents(): Promise<OutboxEvent[]> {
+    return this.outboxService.claimPendingEvents('order.created');
+  }
+
+  async handle(event: OutboxEvent): Promise<void> {
+    // Send email, publish message, call another service, etc.
+  }
+
+  protected getNextTryAt(
+    event: OutboxEvent,
+    error: unknown,
+    nextRetryCount: number,
+  ): Date | null {
+    return new Date(Date.now() + nextRetryCount * 60_000);
+  }
+}
+```
+
 ### Cleanup processed events
 
 `OutboxCleanupWorker` deletes processed events older than the configured `processedEventRetentionHours`. The library does not schedule it by itself, so wire it to your app scheduler. If retention should come from environment or config, pass it through `OutboxModule.forRootAsync`.
@@ -674,13 +716,13 @@ export class OutboxCleanupCron {
 | Option                         | Default   | Description                                                    |
 | ------------------------------ | --------- | -------------------------------------------------------------- |
 | `claimBatchSize`               | `100`     | Default number of events claimed per poll                      |
-| `maxRetries`                   | `5`       | Failed events become `failed` when this retry count is reached |
+| `maxRetries`                   | `5`       | Default retry limit when an event does not define its own `maxRetries` |
 | `staleProcessingMinutes`       | `5`       | Processing events older than this are reset to pending         |
 | `resetStaleProcessingEvents`   | `true`    | Enables stale processing reset in `BaseWorker`                 |
 | `maxConcurrentEvents`          | unlimited | Limits parallel handler execution inside one worker cycle      |
 | `processedEventRetentionHours` | `24`      | Default age used by `deleteProcessed()`                        |
 
-The outbox entity uses PostgreSQL-specific column types and requires a nullable `processing_started_at` column for stale processing detection.
+The outbox entity uses PostgreSQL-specific column types and requires nullable `processing_started_at`, `next_try_at`, and `max_retries` columns for stale processing detection, delayed retries, and per-event retry limits.
 
 ## Entity Validator
 

@@ -8,6 +8,12 @@ import {
   OUTBOX_MODULE_OPTIONS,
 } from '../outbox.constants';
 
+export interface CreateOutboxEventOptions {
+  manager?: EntityManager;
+  maxRetries?: number | null;
+  nextTryAt?: Date | null;
+}
+
 @Injectable()
 export class OutboxService {
   constructor(
@@ -24,16 +30,19 @@ export class OutboxService {
   async createEvent(
     eventType: string,
     payload: Record<string, any>,
-    manager?: EntityManager,
+    optionsOrManager?: CreateOutboxEventOptions | EntityManager,
   ): Promise<OutboxEvent> {
-    const repo = manager
-      ? manager.getRepository(OutboxEvent)
+    const options = this.resolveCreateEventOptions(optionsOrManager);
+    const repo = options.manager
+      ? options.manager.getRepository(OutboxEvent)
       : this.outboxRepository;
 
     const event = repo.create({
       eventType,
       payload,
       status: OutboxEventStatus.PENDING,
+      maxRetries: this.resolveEventMaxRetries(options.maxRetries),
+      nextTryAt: options.nextTryAt ?? null,
     });
 
     return repo.save(event);
@@ -42,16 +51,20 @@ export class OutboxService {
   async claimById(eventId: string): Promise<OutboxEvent | null> {
     return this.outboxRepository.manager.transaction(async (manager) => {
       const processingStartedAt = new Date();
-      const result = await manager
+      const query = manager
         .createQueryBuilder()
         .update(OutboxEvent)
         .set({
           status: OutboxEventStatus.PROCESSING,
           processingStartedAt,
+          nextTryAt: null,
         })
         .where('id = :id', { id: eventId })
-        .andWhere('status = :status', { status: OutboxEventStatus.PENDING })
-        .execute();
+        .andWhere('status = :status', { status: OutboxEventStatus.PENDING });
+
+      this.addReadyToProcessCondition(query, processingStartedAt);
+
+      const result = await query.execute();
 
       if (!result.affected) {
         return null;
@@ -70,10 +83,14 @@ export class OutboxService {
     }
 
     return this.outboxRepository.manager.transaction(async (manager) => {
-      const events = await manager
+      const query = manager
         .createQueryBuilder(OutboxEvent, 'outbox')
         .where('outbox.status = :status', { status: OutboxEventStatus.PENDING })
-        .andWhere('outbox.eventType IN (:...eventTypes)', { eventTypes })
+        .andWhere('outbox.eventType IN (:...eventTypes)', { eventTypes });
+
+      this.addReadyToProcessCondition(query, new Date(), 'outbox');
+
+      const events = await query
         .orderBy('outbox.createdAt', 'ASC')
         .limit(limit)
         .setLock('pessimistic_write')
@@ -89,6 +106,7 @@ export class OutboxService {
           .set({
             status: OutboxEventStatus.PROCESSING,
             processingStartedAt,
+            nextTryAt: null,
           })
           .whereInIds(eventIds)
           .execute();
@@ -96,6 +114,7 @@ export class OutboxService {
         events.forEach((e) => {
           e.status = OutboxEventStatus.PROCESSING;
           e.processingStartedAt = processingStartedAt;
+          e.nextTryAt = null;
         });
       }
 
@@ -109,10 +128,14 @@ export class OutboxService {
   ): Promise<OutboxEvent[]> {
     return this.outboxRepository.manager.transaction(async (manager) => {
       // Fetch pending events with pessimistic lock
-      const events = await manager
+      const query = manager
         .createQueryBuilder(OutboxEvent, 'outbox')
         .where('outbox.status = :status', { status: OutboxEventStatus.PENDING })
-        .andWhere('outbox.eventType = :eventType', { eventType })
+        .andWhere('outbox.eventType = :eventType', { eventType });
+
+      this.addReadyToProcessCondition(query, new Date(), 'outbox');
+
+      const events = await query
         .orderBy('outbox.createdAt', 'ASC')
         .limit(limit)
         .setLock('pessimistic_write')
@@ -129,6 +152,7 @@ export class OutboxService {
           .set({
             status: OutboxEventStatus.PROCESSING,
             processingStartedAt,
+            nextTryAt: null,
           })
           .whereInIds(eventIds)
           .execute();
@@ -137,6 +161,7 @@ export class OutboxService {
         events.forEach((e) => {
           e.status = OutboxEventStatus.PROCESSING;
           e.processingStartedAt = processingStartedAt;
+          e.nextTryAt = null;
         });
       }
 
@@ -148,6 +173,7 @@ export class OutboxService {
     await this.outboxRepository.update(eventId, {
       status: OutboxEventStatus.PROCESSING,
       processingStartedAt: new Date(),
+      nextTryAt: null,
     });
   }
 
@@ -160,6 +186,7 @@ export class OutboxService {
       {
         status: OutboxEventStatus.PROCESSED,
         processingStartedAt: null,
+        nextTryAt: null,
         processedAt: new Date(),
       },
       expectedProcessingStartedAt,
@@ -169,8 +196,9 @@ export class OutboxService {
   async incrementRetry(
     eventId: string,
     error: string,
-    maxRetries = this.options.operationalPolicy.maxRetries,
+    fallbackMaxRetries = this.options.operationalPolicy.maxRetries,
     expectedProcessingStartedAt?: Date | null,
+    nextTryAt?: Date | null,
   ): Promise<boolean> {
     const event = await this.findEventForProcessingUpdate(
       eventId,
@@ -182,6 +210,10 @@ export class OutboxService {
     }
 
     const newRetryCount = event.retryCount + 1;
+    const maxRetries = this.resolveEffectiveMaxRetries(
+      event.maxRetries,
+      fallbackMaxRetries,
+    );
 
     if (newRetryCount >= maxRetries) {
       return this.updateEvent(
@@ -191,6 +223,7 @@ export class OutboxService {
           lastError: error,
           retryCount: newRetryCount,
           processingStartedAt: null,
+          nextTryAt: null,
         },
         expectedProcessingStartedAt,
       );
@@ -203,6 +236,7 @@ export class OutboxService {
         lastError: error,
         retryCount: newRetryCount,
         processingStartedAt: null,
+        nextTryAt: nextTryAt ?? null,
       },
       expectedProcessingStartedAt,
     );
@@ -225,6 +259,7 @@ export class OutboxService {
         lastError: error,
         retryCount: event?.retryCount || 0,
         processingStartedAt: null,
+        nextTryAt: null,
       },
       expectedProcessingStartedAt,
     );
@@ -257,6 +292,7 @@ export class OutboxService {
       .set({
         status: OutboxEventStatus.PENDING,
         processingStartedAt: null,
+        nextTryAt: null,
       })
       .where('status = :status', { status: OutboxEventStatus.PROCESSING })
       .andWhere('processing_started_at < :staleThreshold', { staleThreshold })
@@ -322,5 +358,73 @@ export class OutboxService {
     query.andWhere('processing_started_at = :expectedProcessingStartedAt', {
       expectedProcessingStartedAt,
     });
+  }
+
+  private addReadyToProcessCondition(
+    query: {
+      andWhere: (
+        where: string,
+        parameters?: Record<string, unknown>,
+      ) => unknown;
+    },
+    now: Date,
+    alias?: string,
+  ): void {
+    const prefix = alias ? `${alias}.` : '';
+
+    query.andWhere(
+      `(${prefix}next_try_at IS NULL OR ${prefix}next_try_at <= :now)`,
+      { now },
+    );
+  }
+
+  private resolveCreateEventOptions(
+    optionsOrManager?: CreateOutboxEventOptions | EntityManager,
+  ): CreateOutboxEventOptions {
+    if (!optionsOrManager) {
+      return {};
+    }
+
+    if (this.isEntityManager(optionsOrManager)) {
+      return { manager: optionsOrManager };
+    }
+
+    return optionsOrManager;
+  }
+
+  private isEntityManager(
+    value: CreateOutboxEventOptions | EntityManager,
+  ): value is EntityManager {
+    return typeof (value as EntityManager).getRepository === 'function';
+  }
+
+  private resolveEventMaxRetries(maxRetries?: number | null): number | null {
+    if (maxRetries === undefined || maxRetries === null) {
+      return null;
+    }
+
+    return this.requirePositiveInteger(maxRetries, 'maxRetries');
+  }
+
+  private resolveEffectiveMaxRetries(
+    eventMaxRetries: number | null,
+    fallbackMaxRetries: number,
+  ): number {
+    if (eventMaxRetries !== null) {
+      return this.requirePositiveInteger(eventMaxRetries, 'event.maxRetries');
+    }
+
+    return this.requirePositiveInteger(
+      fallbackMaxRetries,
+      'fallbackMaxRetries',
+    );
+  }
+
+  private requirePositiveInteger(value: number, optionName: string): number {
+    if (Number.isInteger(value) && value > 0) {
+      return value;
+    }
+
+    throw new TypeError(`${optionName} must be a positive integer.`);
   }
 }

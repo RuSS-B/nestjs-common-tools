@@ -90,12 +90,15 @@ export abstract class BaseWorker {
     } catch (e: unknown) {
       this.logger.error(`Failed to process event ${event.id}`, e);
       const errorMessage = this.getErrorMessage(e);
+      const nextRetryCount = event.retryCount + 1;
+      const nextTryAt = this.getNextTryAt(event, e, nextRetryCount);
 
       const retryUpdated = await this.outboxService.incrementRetry(
         event.id,
         errorMessage,
         maxRetries,
         event.processingStartedAt,
+        nextTryAt,
       );
 
       if (!retryUpdated) {
@@ -112,6 +115,18 @@ export abstract class BaseWorker {
     }
 
     return String(e);
+  }
+
+  protected getNextTryAt(
+    event: OutboxEvent,
+    error: unknown,
+    nextRetryCount: number,
+  ): Date | null {
+    void event;
+    void error;
+    void nextRetryCount;
+
+    return null;
   }
 
   abstract handle(event: OutboxEvent): Promise<void>;

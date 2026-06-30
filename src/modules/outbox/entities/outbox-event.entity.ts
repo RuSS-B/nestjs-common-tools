@@ -29,6 +29,9 @@ export class OutboxEvent {
   @Column({ name: 'retry_count', type: 'int', default: 0 })
   retryCount: number;
 
+  @Column({ name: 'max_retries', type: 'int', nullable: true })
+  maxRetries: number | null;
+
   @Column({ name: 'last_error', type: 'text', nullable: true })
   lastError: string | null;
 
@@ -42,6 +45,10 @@ export class OutboxEvent {
     nullable: true,
   })
   processingStartedAt: Date | null;
+
+  @Index()
+  @Column({ type: 'timestamptz', name: 'next_try_at', nullable: true })
+  nextTryAt: Date | null;
 
   @Column({ type: 'timestamptz', name: 'processed_at', nullable: true })
   processedAt: Date | null;
