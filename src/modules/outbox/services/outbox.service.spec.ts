@@ -5,6 +5,10 @@ import { OutboxResolvedModuleOptions } from '../types';
 import { OutboxService } from './outbox.service';
 
 describe('OutboxService', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('should create an event with delayed processing and event retry limit', async () => {
     const nextTryAt = new Date('2026-05-22T12:00:05.000Z');
     const event = createOutboxEvent({
@@ -35,6 +39,39 @@ describe('OutboxService', () => {
       nextTryAt,
     });
     expect(repository.save).toHaveBeenCalledWith(event);
+  });
+
+  it('should create an event with delayed processing from delay milliseconds', async () => {
+    jest
+      .spyOn(Date, 'now')
+      .mockReturnValue(new Date('2026-05-22T12:00:00.000Z').getTime());
+    const nextTryAt = new Date('2026-05-22T12:00:05.000Z');
+    const event = createOutboxEvent({
+      eventType: 'order.reminder',
+      payload: { orderId: 'order-1' },
+      nextTryAt,
+    });
+    const repository = createRepositoryMock({
+      create: jest.fn(() => event),
+      save: jest.fn().mockResolvedValue(event),
+    });
+    const service = createService(repository);
+
+    await expect(
+      service.createEvent(
+        'order.reminder',
+        { orderId: 'order-1' },
+        { delayMs: 5_000 },
+      ),
+    ).resolves.toBe(event);
+
+    expect(repository.create).toHaveBeenCalledWith({
+      eventType: 'order.reminder',
+      payload: { orderId: 'order-1' },
+      status: OutboxEventStatus.PENDING,
+      maxRetries: null,
+      nextTryAt,
+    });
   });
 
   it('should create an event with transaction manager and default scheduling options', async () => {
@@ -72,6 +109,37 @@ describe('OutboxService', () => {
     await expect(
       service.createEvent('order.reminder', {}, { maxRetries: 2.5 }),
     ).rejects.toThrow('maxRetries must be a positive integer.');
+
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('should reject delayed event with both next try time and delay milliseconds', async () => {
+    const repository = createRepositoryMock();
+    const service = createService(repository);
+
+    await expect(
+      service.createEvent(
+        'order.reminder',
+        {},
+        {
+          delayMs: 5_000,
+          nextTryAt: new Date('2026-05-22T12:00:05.000Z'),
+        },
+      ),
+    ).rejects.toThrow('delayMs cannot be used together with nextTryAt.');
+
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('should reject non-integer delay milliseconds on create', async () => {
+    const repository = createRepositoryMock();
+    const service = createService(repository);
+
+    await expect(
+      service.createEvent('order.reminder', {}, { delayMs: 500.5 }),
+    ).rejects.toThrow('delayMs must be a positive integer.');
 
     expect(repository.create).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();

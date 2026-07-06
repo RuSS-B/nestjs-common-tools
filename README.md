@@ -617,14 +617,14 @@ await dataSource.transaction(async (manager) => {
 });
 ```
 
-Create delayed events with `nextTryAt` when processing must not start before a known time. Pass `maxRetries` to override the global retry limit for a specific event:
+Create delayed events with `delayMs` or `nextTryAt` when processing must not start before a known time. Pass `maxRetries` to override the global retry limit for a specific event:
 
 ```typescript
 await outboxService.createEvent(
   'order.reminder',
   { orderId: order.id },
   {
-    nextTryAt: new Date(Date.now() + 5_000),
+    delayMs: 5_000,
     maxRetries: 3,
   },
 );

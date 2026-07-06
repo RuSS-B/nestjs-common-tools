@@ -9,6 +9,7 @@ import {
 } from '../outbox.constants';
 
 export interface CreateOutboxEventOptions {
+  delayMs?: number | null;
   manager?: EntityManager;
   maxRetries?: number | null;
   nextTryAt?: Date | null;
@@ -42,7 +43,7 @@ export class OutboxService {
       payload,
       status: OutboxEventStatus.PENDING,
       maxRetries: this.resolveEventMaxRetries(options.maxRetries),
-      nextTryAt: options.nextTryAt ?? null,
+      nextTryAt: this.resolveEventNextTryAt(options),
     });
 
     return repo.save(event);
@@ -404,6 +405,22 @@ export class OutboxService {
     }
 
     return this.requirePositiveInteger(maxRetries, 'maxRetries');
+  }
+
+  private resolveEventNextTryAt(
+    options: CreateOutboxEventOptions,
+  ): Date | null {
+    if (options.delayMs === undefined || options.delayMs === null) {
+      return options.nextTryAt ?? null;
+    }
+
+    if (options.nextTryAt !== undefined && options.nextTryAt !== null) {
+      throw new TypeError('delayMs cannot be used together with nextTryAt.');
+    }
+
+    return new Date(
+      Date.now() + this.requirePositiveInteger(options.delayMs, 'delayMs'),
+    );
   }
 
   private resolveEffectiveMaxRetries(
