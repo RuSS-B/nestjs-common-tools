@@ -24,6 +24,9 @@
   ],
   "author": "RuSS-B",
   "license": "MIT",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/RuSS-B/nestjs-common-tools.git"
