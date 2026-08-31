@@ -76,6 +76,10 @@
       "types": "./dist/logger/pino/index.d.ts",
       "default": "./dist/logger/pino/index.js"
     },
+    "./axios": {
+      "types": "./dist/axios/index.d.ts",
+      "default": "./dist/axios/index.js"
+    },
     "./errors": {
       "types": "./dist/errors/index.d.ts",
       "default": "./dist/errors/index.js"
@@ -118,6 +122,9 @@
       "logger/pino": [
         "dist/logger/pino/index.d.ts"
       ],
+      "axios": [
+        "dist/axios/index.d.ts"
+      ],
       "errors": [
         "dist/errors/index.d.ts"
       ],
@@ -138,6 +145,7 @@
     "@nestjs/common": "^10.0.0 || ^11.0.0",
     "@nestjs/config": "^3.0.0 || ^4.0.0",
     "@nestjs/typeorm": "^10.0.0 || ^11.0.0",
+    "axios": "^1.0.0",
     "fastify": "^4.0.0 || ^5.0.0",
     "nest-winston": "^1.10.2",
     "nestjs-pino": "^4.6.1",
@@ -151,6 +159,9 @@
     "zod": "^3.0.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
+    "axios": {
+      "optional": true
+    },
     "fastify": {
       "optional": true
     },
@@ -177,6 +188,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "axios": "^1.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",

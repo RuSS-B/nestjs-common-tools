@@ -36,6 +36,7 @@ This package uses subpath exports for most features.
 | `@russ-b/nestjs-common-tools/typeorm` | TypeORM filters, helpers, transformers, and types |
 | `@russ-b/nestjs-common-tools/logger` | logger builder and logger-related interfaces/types |
 | `@russ-b/nestjs-common-tools/logger/pino` | config-first `nestjs-pino` module options helper |
+| `@russ-b/nestjs-common-tools/axios` | Axios error logging helpers |
 | `@russ-b/nestjs-common-tools/errors` | API error response helpers and validation exception factories |
 | `@russ-b/nestjs-common-tools/zod` | Zod exception filters for NestJS HTTP apps |
 | `@russ-b/nestjs-common-tools/pagination` | pagination DTOs, response builders, and errors |
@@ -79,6 +80,34 @@ import { createPinoLoggerModuleOptions } from '@russ-b/nestjs-common-tools/logge
   ],
 })
 export class AppModule {}
+```
+
+## HTTP request failure logging
+
+Import Axios helpers from `@russ-b/nestjs-common-tools/axios`.
+
+Install Axios when using this entrypoint:
+
+```bash
+npm install axios
+```
+
+Use `logHttpRequestFailure` to write structured Axios failure details while
+preserving a consistent fallback for other error values:
+
+```typescript
+import { Logger } from '@nestjs/common';
+import { logHttpRequestFailure } from '@russ-b/nestjs-common-tools/axios';
+
+const logger = new Logger('PaymentClient');
+
+try {
+  // Axios request
+} catch (error: unknown) {
+  logHttpRequestFailure(logger, error, 'Payment request failed', {
+    paymentId,
+  });
+}
 ```
 
 ## Error Responses
