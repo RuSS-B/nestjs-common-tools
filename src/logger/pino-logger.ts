@@ -74,6 +74,10 @@ export function createPinoLoggerModuleOptions(
   return {
     pinoHttp: {
       ...pinoHttp,
+      formatters: {
+        ...pinoHttp.formatters,
+        level: (label: string) => ({ level: label }),
+      },
       stream: pino.destination({
         sync: false,
       }),

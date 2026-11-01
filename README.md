@@ -61,6 +61,19 @@ npm install pino-pretty
 
 `createPinoLoggerModuleOptions` does not read from `process.env`. Pass application config explicitly, for example from `ConfigService` or your own validated config object.
 
+Starting with 2.5.0, JSON logs use the Pino level names `trace`, `debug`, `info`,
+`warn`, `error`, and `fatal` as strings in the `level` field. Earlier versions
+inherited the NestJS-compatible names `verbose` for `trace` and `log` for `info`.
+Update log consumers, queries, and alerts that match those earlier values;
+historical log entries retain their original values. NestJS `logger.log()` still
+logs at Pino's `info` level, so application logging calls do not need to change.
+
+The `level` option controls the minimum emitted level and defaults to `debug`.
+Set it to `trace` to include trace messages, or `silent` to disable output. If your
+application uses `LOG_LEVEL`, pass its validated value as `level`. Pretty output
+and the existing timestamp, message, metadata, redaction, and HTTP logging options
+are unchanged.
+
 ```typescript
 import { LoggerModule } from 'nestjs-pino';
 import { createPinoLoggerModuleOptions } from '@russ-b/nestjs-common-tools/logger/pino';
