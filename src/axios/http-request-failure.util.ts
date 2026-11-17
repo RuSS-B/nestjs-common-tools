@@ -1,9 +1,8 @@
-import type { LoggerService } from '@nestjs/common';
 import axios from 'axios';
 
 import { getErrorMessage } from '../common/util/error.util';
 
-export type HttpFailureLogger = Pick<LoggerService, 'error'>;
+import type { HttpFailureLogger } from './types';
 
 export function logHttpRequestFailure(
   logger: HttpFailureLogger,

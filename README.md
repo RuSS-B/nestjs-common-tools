@@ -123,6 +123,106 @@ try {
 }
 ```
 
+## HTTP request diagnostics
+
+`createHttpRequestDiagnostics` from `@russ-b/nestjs-common-tools/axios` observes
+individual outbound request attempts. It generates correlation IDs, captures
+monotonic durations and safe response facts, and classifies HTTP, timeout,
+no-response and request-construction failures. It does not execute requests,
+retry them, validate provider schemas or convert application exceptions.
+
+The synchronous sink receives a unified `HttpDiagnosticEvent`:
+
+- `kind`: `request_started`, `response_received`, `request_failed` or `invalid_response`.
+- `fields`: request ID, method, host, path, timeout, duration, response presence,
+  HTTP status, normalized content type, response type, transport error code and outcome.
+- `context`: explicitly supplied application correlation fields.
+- `metadata`: explicitly supplied provider diagnostics.
+
+`outcome` is absent on start and otherwise one of `response_received`,
+`provider_error`, `http_error`, `timeout`, `no_response`, `request_error` or
+`invalid_response`. Provider error semantics are supplied by the caller.
+
+```typescript
+import { Logger } from '@nestjs/common';
+import { createHttpRequestDiagnostics } from '@russ-b/nestjs-common-tools/axios';
+
+const logger = new Logger('UpstreamClient');
+const diagnostics = createHttpRequestDiagnostics({
+  emit(event) {
+    const record = {
+      ...event.context,
+      ...event.metadata,
+      ...event.fields,
+      message: `Upstream HTTP ${event.kind}`,
+    };
+
+    if (event.kind === 'request_failed' || event.kind === 'invalid_response') {
+      logger.error(record);
+    } else {
+      logger.log(record);
+    }
+  },
+});
+```
+
+Keep provider-specific formatting in the application adapter. For example, an
+adapter may display a canonical `timeout` as its existing `no_response` log
+outcome. Flattening `fields` last, as above, prevents context or provider
+metadata from replacing transport fields, including fields whose value is
+`undefined`. The library itself keeps all three namespaces separate.
+
+For each actual HTTP attempt, call `start()` with a safe request description:
+
+```typescript
+const attempt = diagnostics.start(
+  { method: 'GET', host: 'api.example.test', path: '/receipts/:id', timeoutMs: 30000 },
+  { operationId: 'operation-id' },
+);
+
+// After receiving an Axios response:
+const snapshot = attempt.captureResponse(response);
+attempt.response(snapshot, { providerStatus: true });
+
+// For an invalid provider schema, use the same snapshot instead:
+attempt.invalidResponse(snapshot, {
+  issues: [{ code: 'invalid_type', path: 'result.id', expected: 'string' }],
+});
+
+// In the transport request's catch block:
+attempt.failure(error, { providerStatus: false });
+```
+
+These calls illustrate separate response, schema-error and transport-error
+paths. `captureResponse()` emits nothing; it fixes duration and response facts
+before schema validation. The caller decides when to emit response or
+validation events, and can emit both if its application format requires it.
+Keep schema validation and exception mapping outside a transport catch block
+that would otherwise report them again as HTTP failures.
+
+No raw request, response body, error message, headers or Axios configuration is
+automatically emitted. `getHttpResponseMetadata(data, contentType)` is also
+available separately; it returns only response type and a bounded normalized
+media type without parameters. Binary bodies are identified without decoding.
+
+The caller must supply sanitized host/path values and allowlisted context and
+metadata. In particular, mask sensitive route identifiers and omit URL
+credentials/query strings, tokens, receipt contents and personal data. Extension
+fields are trusted inputs, not automatically redacted or size-limited. Provider
+envelopes, code/message allowlists, bounded binary JSON decoding and schema
+summaries belong in application adapters. Pass one structured object to a Nest
+logger rather than passing metadata as an extra positional argument.
+
+Each `start()` has independent timing and correlation state and shallow-copies
+its context. Treat nested extension values as immutable. Synchronous sink
+exceptions are suppressed so a logging failure cannot replace the HTTP result
+or original application exception. Asynchronous sinks must handle their own
+promise rejections; the diagnostic API does not await them.
+
+The existing `logHttpRequestFailure` export is unchanged. It includes raw error
+messages and upstream response data; use the diagnostics API when those values
+must not reach logs.
+
 ## Error Responses
 
 Import error helpers from `@russ-b/nestjs-common-tools/errors`.
